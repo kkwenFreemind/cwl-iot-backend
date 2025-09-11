@@ -4,19 +4,26 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
- * 菜单查询对象
+ * Query object for searching and filtering menu records.
+ * <p>
+ * Supports keyword-based search on menu name and filtering by status (visible/hidden).
+ * Used for paginated or filtered queries in menu management features.
+ * </p>
  *
  * @author haoxr
  * @since 2022/10/28
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11 
  */
-@Schema(description ="菜单查询对象")
+@Schema(description ="Menu query object")
 @Data
 public class MenuQuery {
 
-    @Schema(description="关键字(菜单名称)")
+    @Schema(description="Keyword (menu name)")
     private String keywords;
 
-    @Schema(description="状态(1->显示；0->隐藏)")
+    @Schema(description="Status (1->show; 0->hide)")
     private Integer status;
 
 }

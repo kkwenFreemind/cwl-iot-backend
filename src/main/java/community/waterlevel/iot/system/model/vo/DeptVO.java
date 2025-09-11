@@ -7,35 +7,51 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Schema(description = "部门视图对象")
+/**
+ * View object representing department data for API responses.
+ * <p>
+ * Encapsulates department ID, parent ID, name, code, status, sort order, child
+ * departments, and timestamps.
+ * Used to transfer department data from the backend to the client in department
+ * management features.
+ * </p>
+ * 
+ * @author youlaitech
+ * @since 2024-08-27 10:31
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
+ */
 @Data
+@Schema(description = "Dept VO")
 public class DeptVO {
 
-    @Schema(description = "部门ID")
+    @Schema(description = "id")
     private Long id;
 
-    @Schema(description = "父部门ID")
+    @Schema(description = "parentId")
     private Long parentId;
 
-    @Schema(description = "部门名称")
+    @Schema(description = "name")
     private String name;
 
-    @Schema(description = "部门编号")
+    @Schema(description = "code")
     private String code;
 
-    @Schema(description = "排序")
+    @Schema(description = "sort")
     private Integer sort;
 
-    @Schema(description = "状态(1:启用；0:禁用)")
+    @Schema(description = "Status (1: enabled; 0: disabled)")
     private Integer status;
 
-    @Schema(description = "子部门")
+    @Schema(description = "children")
     private List<DeptVO> children;
 
-    @Schema(description = "创建时间")
+    @Schema(description = "create Time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime createTime;
-    @Schema(description = "修改时间")
+
+    @Schema(description = "update Time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime updateTime;
 

@@ -7,46 +7,55 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 用户分页视图对象
+ * View object representing a paginated user record for API responses.
+ * <p>
+ * Encapsulates user ID, username, nickname, mobile, gender, avatar, email,
+ * status, department, roles, and creation time.
+ * Used to transfer paginated user data from the backend to the client in user
+ * management features.
+ * </p>
  *
  * @author haoxr
  * @since 2022/1/15 9:41
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
-@Schema(description ="用户分页对象")
+@Schema(description = "UserPage VO")
 @Data
 public class UserPageVO {
 
-    @Schema(description="用户ID")
+    @Schema(description = "id")
     private Long id;
 
-    @Schema(description="用户名")
+    @Schema(description = "username")
     private String username;
 
-    @Schema(description="用户昵称")
+    @Schema(description = "nickname")
     private String nickname;
 
-    @Schema(description="手机号")
+    @Schema(description = "mobile")
     private String mobile;
 
-    @Schema(description="性别")
+    @Schema(description = "gender")
     private Integer gender;
 
-    @Schema(description="用户头像地址")
+    @Schema(description = "avatar")
     private String avatar;
 
-    @Schema(description="用户邮箱")
+    @Schema(description = "email")
     private String email;
 
-    @Schema(description="用户状态(1:启用;0:禁用)")
+    @Schema(description = "User status (1: enabled; 0: disabled)")
     private Integer status;
 
-    @Schema(description="部门名称")
+    @Schema(description = "deptName")
     private String deptName;
 
-    @Schema(description="角色名称，多个使用英文逗号(,)分割")
+    @Schema(description = "Use commas (,) to separate multiple role names.")
     private String roleNames;
 
-    @Schema(description="创建时间")
+    @Schema(description = "createTime")
     @JsonFormat(pattern = "yyyy/MM/dd HH:mm")
     private LocalDateTime createTime;
 

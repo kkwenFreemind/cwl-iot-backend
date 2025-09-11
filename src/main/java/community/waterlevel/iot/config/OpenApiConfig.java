@@ -21,11 +21,17 @@ import org.springframework.util.AntPathMatcher;
 import java.util.stream.Stream;
 
 /**
- * OpenAPI 接口文档配置
+ * OpenAPI documentation configuration for the management system.
+ * <p>
+ * Configures the OpenAPI (Swagger) documentation, including API metadata,
+ * global security schemes, and custom extensions.
+ * </p>
  *
  * @author Ray.Hao
- * @see <a href="https://doc.xiaominfo.com/docs/quick-start">knife4j 快速开始</a>
  * @since 2023/2/17
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Configuration
 @RequiredArgsConstructor
@@ -37,7 +43,13 @@ public class OpenApiConfig {
     private final SecurityProperties securityProperties;
 
     /**
-     * 接口文档信息
+     * Defines the OpenAPI documentation metadata and global security scheme for the
+     * management system APIs.
+     * <p>
+     * Sets up API title, description, version, license, contact, and configures
+     * JWT-based authorization as a global security scheme.
+     *
+     * @return the configured {@link OpenAPI} instance
      */
     @Bean
     public OpenAPI openApi() {
@@ -46,20 +58,17 @@ public class OpenApiConfig {
 
         return new OpenAPI()
                 .info(new Info()
-                        .title("管理系统 API 文档")
-                        .description("本文档涵盖管理系统的所有API接口，包括登录认证、用户管理、角色管理、部门管理等功能模块，提供详细的接口说明和使用指南。")
+                        .title("Community Water Level IOT API Documentation")
+                        .description("This document covers all API endpoints.")
                         .version(appVersion)
                         .license(new License()
                                 .name("Apache License 2.0")
-                                .url("http://www.apache.org/licenses/LICENSE-2.0")
-                        )
+                                .url("http://www.apache.org/licenses/LICENSE-2.0"))
                         .contact(new Contact()
-                                .name("youlai")
-                                .email("youlaitech@163.com")
-                                .url("https://www.youlai.tech")
-                        )
-                )
-                // 配置全局鉴权参数-Authorize
+                                .name("Chang Xiu-Wen")
+                                .email("kkwen.freemind@gmail.com")
+                                .url("https://github.com/kkwenFreemind")))
+                // Configure global authorization parameter
                 .components(new Components()
                         .addSecuritySchemes(HttpHeaders.AUTHORIZATION,
                                 new SecurityScheme()
@@ -67,37 +76,40 @@ public class OpenApiConfig {
                                         .type(SecurityScheme.Type.APIKEY)
                                         .in(SecurityScheme.In.HEADER)
                                         .scheme("Bearer")
-                                        .bearerFormat("JWT")
-                        )
-                );
+                                        .bearerFormat("JWT")));
     }
 
-
     /**
-     * 全局自定义扩展
+     * Global customizer for OpenAPI documentation.
+     * <p>
+     * Adds the {@code Authorization} security requirement to all API operations
+     * except those matching the security whitelist.
+     * This ensures that endpoints requiring authentication are properly documented
+     * with security requirements in Swagger UI.
+     *
+     * @return the {@link GlobalOpenApiCustomizer} bean
      */
     @Bean
     public GlobalOpenApiCustomizer globalOpenApiCustomizer() {
         return openApi -> {
-            // 全局添加Authorization
+            // Globally add Authorization except for whitelisted paths
             if (openApi.getPaths() != null) {
                 openApi.getPaths().forEach((path, pathItem) -> {
 
-                    // 忽略认证的请求无需携带 Authorization
+                    // Skip adding Authorization for whitelisted (ignored) paths
                     String[] ignoreUrls = securityProperties.getIgnoreUrls();
                     if (ArrayUtil.isNotEmpty(ignoreUrls)) {
-                        // Ant 匹配忽略的路径，不添加Authorization
+                        // Use AntPathMatcher to match ignored paths
                         AntPathMatcher antPathMatcher = new AntPathMatcher();
                         if (Stream.of(ignoreUrls).anyMatch(ignoreUrl -> antPathMatcher.match(ignoreUrl, path))) {
                             return;
                         }
                     }
 
-                    // 其他接口统一添加Authorization
+                    // Add Authorization requirement to all other operations
                     pathItem.readOperations()
-                            .forEach(operation ->
-                                    operation.addSecurityItem(new SecurityRequirement().addList(HttpHeaders.AUTHORIZATION))
-                            );
+                            .forEach(operation -> operation
+                                    .addSecurityItem(new SecurityRequirement().addList(HttpHeaders.AUTHORIZATION)));
                 });
             }
         };

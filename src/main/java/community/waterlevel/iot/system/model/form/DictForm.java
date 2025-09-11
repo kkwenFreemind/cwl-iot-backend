@@ -1,6 +1,5 @@
 package community.waterlevel.iot.system.model.form;
 
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -11,30 +10,59 @@ import org.hibernate.validator.constraints.Range;
 import java.util.List;
 
 /**
- * 字典表单对象
+ * Form object representing dictionary data for create and update operations.
+ * <p>
+ * Encapsulates dictionary name, code, status, and remarks. Used for data
+ * transfer
+ * between client and server in dictionary management features.
+ * </p>
  *
  * @author Ray Hao
  * @since 2.9.0
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
+ * 
  */
-@Schema(description = "字典")
+@Schema(description = "Dict Form")
 @Data
 public class DictForm {
 
-    @Schema(description = "字典ID",example = "1")
+    /**
+     * Dictionary primary key identifier for updates.
+     * Used for modifying existing dictionary categories, null for new creation.
+     */
+    @Schema(description = "id", example = "1")
     private Long id;
 
-    @Schema(description = "字典名称",example = "性别")
+    /**
+     * Human-readable dictionary category name.
+     * Descriptive name displayed in administrative interfaces and documentation.
+     */
+    @Schema(description = "name")
     private String name;
 
-    @Schema(description = "字典编码", example ="gender")
-    @NotBlank(message = "字典编码不能为空")
+    /**
+     * Unique dictionary code for programmatic access.
+     * System identifier used to retrieve dictionary items and validate data.
+     */
+    @Schema(description = "dictCode")
+    @NotBlank(message = "NotBlank")
     private String dictCode;
 
-    @Schema(description = "备注")
+    /**
+     * Additional description or usage notes for the dictionary category.
+     * Optional field providing context about the dictionary's purpose and usage.
+     */
+    @Schema(description = "remark")
     private String remark;
 
-    @Schema(description = "字典状态（1-启用，0-禁用）", example = "1")
-    @Range(min = 0, max = 1, message = "字典状态不正确")
+    /**
+     * Dictionary activation status for operational control.
+     * 1 = Enabled (dictionary active), 0 = Disabled (dictionary inactive)
+     */
+    @Schema(description = "Dictionary status (1-enabled, 0-disabled）", example = "1")
+    @Range(min = 0, max = 1, message = "The dictionary state is incorrect")
     private Integer status;
 
 }

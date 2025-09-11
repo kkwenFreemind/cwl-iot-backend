@@ -6,16 +6,23 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 系统配置查询对象
+ * Page query object for searching and filtering system configuration records.
+ * <p>
+ * Supports keyword-based search on configuration name and value, and provides pagination features
+ * via the base class. Used for paginated queries in system configuration management.
+ * </p>
  *
  * @author Theo
  * @since 2024-7-29 11:38:00
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Getter
 @Setter
-@Schema(description = "系统配置分页查询")
+@Schema(description = "Config Page Query")
 public class ConfigPageQuery extends BasePageQuery {
 
-    @Schema(description="关键字(配置项名称/配置项值)")
+    @Schema(description="Keywords (configuration item name/configuration item value)")
     private String keywords;
 }

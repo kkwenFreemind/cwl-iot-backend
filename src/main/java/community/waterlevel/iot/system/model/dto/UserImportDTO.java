@@ -4,33 +4,42 @@ import cn.idev.excel.annotation.ExcelProperty;
 import lombok.Data;
 
 /**
- * 用户导入对象
+ * UserImportDTO is a data transfer object for importing user data from Excel
+ * files.
+ * <p>
+ * This class defines the fields expected in the import template, including
+ * username, nickname, gender, contact information, roles, and department code.
+ * Used in conjunction with EasyExcel for batch user import operations in the
+ * IoT backend.
  *
  * @author Ray.Hao
  * @since 2022/4/10
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Data
 public class UserImportDTO {
 
-    @ExcelProperty(value = "用户名")
+    @ExcelProperty(value = "username")
     private String username;
 
-    @ExcelProperty(value = "昵称")
+    @ExcelProperty(value = "nickname")
     private String nickname;
 
-    @ExcelProperty(value = "性别")
+    @ExcelProperty(value = "genderLabel")
     private String genderLabel;
 
-    @ExcelProperty(value = "手机号码")
+    @ExcelProperty(value = "mobile")
     private String mobile;
 
-    @ExcelProperty(value = "邮箱")
+    @ExcelProperty(value = "email")
     private String email;
 
-    @ExcelProperty("角色")
+    @ExcelProperty("roleCodes")
     private String roleCodes;
 
-    @ExcelProperty("部门")
+    @ExcelProperty("deptCode")
     private String deptCode;
 
 }

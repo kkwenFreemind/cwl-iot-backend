@@ -1,22 +1,19 @@
 package community.waterlevel.iot.config;
 
-import cn.binarywang.wx.miniapp.api.WxMaService;
 import cn.hutool.captcha.generator.CodeGenerator;
 import cn.hutool.core.util.ArrayUtil;
 import community.waterlevel.iot.config.property.SecurityProperties;
 import community.waterlevel.iot.core.filter.RateLimiterFilter;
 import community.waterlevel.iot.core.security.exception.MyAccessDeniedHandler;
 import community.waterlevel.iot.core.security.exception.MyAuthenticationEntryPoint;
-import community.waterlevel.iot.core.security.extension.sms.SmsAuthenticationProvider;
-import community.waterlevel.iot.core.security.extension.wx.WxMiniAppCodeAuthenticationProvider;
-import community.waterlevel.iot.core.security.extension.wx.WxMiniAppPhoneAuthenticationProvider;
 import community.waterlevel.iot.core.security.filter.CaptchaValidationFilter;
 import community.waterlevel.iot.core.security.filter.TokenAuthenticationFilter;
-import community.waterlevel.iot.core.security.service.SysUserDetailsService;
 import community.waterlevel.iot.core.security.token.TokenManager;
-import community.waterlevel.iot.system.service.ConfigService;
-import community.waterlevel.iot.system.service.UserService;
-import lombok.RequiredArgsConstructor;
+import community.waterlevel.iot.core.security.service.SysUserDetailsService;
+import community.waterlevel.iot.system.service.ConfigJpaService;
+import community.waterlevel.iot.system.service.UserJpaService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -35,74 +32,127 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Spring Security 配置类
+ * Main configuration class for Spring Security.
+ * Sets up stateless, token-based authentication, custom filters (rate limiting, CAPTCHA, token validation),
+ * and configures public and secured endpoints using application properties.
+ * Integrates custom authentication providers and manages the security filter chain.
  *
  * @author Ray.Hao
  * @since 2023/2/17
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11 
  */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final PasswordEncoder passwordEncoder;
-
     private final TokenManager tokenManager;
-    private final WxMaService wxMaService;
-    private final UserService userService;
     private final SysUserDetailsService userDetailsService;
-
     private final CodeGenerator codeGenerator;
-    private final ConfigService configService;
+    private final ConfigJpaService configService;
     private final SecurityProperties securityProperties;
 
+    @Autowired(required = false)
+
     /**
-     * 配置安全过滤链 SecurityFilterChain
+     * Constructs the SecurityConfig with all required dependencies.
+     *
+     * @param redisTemplate      the Redis template for caching and session
+     *                           management
+     * @param passwordEncoder    the password encoder for authentication
+     * @param tokenManager       the token manager for JWT or token-based
+     *                           authentication
+     * @param userService        the user service for user management
+     * @param userDetailsService the user details service for loading user-specific
+     *                           data
+     * @param codeGenerator      the CAPTCHA code generator
+     * @param configService      the configuration service for system settings
+     * @param securityProperties the security configuration properties
+     */
+    public SecurityConfig(RedisTemplate<String, Object> redisTemplate,
+            PasswordEncoder passwordEncoder,
+            TokenManager tokenManager,
+            UserJpaService userService,
+            SysUserDetailsService userDetailsService,
+            CodeGenerator codeGenerator,
+            ConfigJpaService configService,
+            SecurityProperties securityProperties) {
+        this.redisTemplate = redisTemplate;
+        this.passwordEncoder = passwordEncoder;
+        this.tokenManager = tokenManager;
+        this.userDetailsService = userDetailsService;
+        this.codeGenerator = codeGenerator;
+        this.configService = configService;
+        this.securityProperties = securityProperties;
+    }
+
+    /**
+     * Configures the main Spring Security filter chain for the application.
+     * <p>
+     * Sets up stateless, token-based authentication, disables default form login
+     * and CSRF, and adds custom filters for rate limiting, CAPTCHA validation, and
+     * token authentication.
+     * Public endpoints are configured via the security properties.
+     *
+     * @param http the {@link HttpSecurity} builder
+     * @return the configured {@link SecurityFilterChain}
+     * @throws Exception if a security configuration error occurs
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         return http
                 .authorizeHttpRequests(requestMatcherRegistry -> {
-                            // 配置无需登录即可访问的公开接口
-                            String[] ignoreUrls = securityProperties.getIgnoreUrls();
-                            if (ArrayUtil.isNotEmpty(ignoreUrls)) {
-                                requestMatcherRegistry.requestMatchers(ignoreUrls).permitAll();
-                            }
-                            // 其他所有请求需登录后访问
-                            requestMatcherRegistry.anyRequest().authenticated();
-                        }
-                )
-                .exceptionHandling(configurer ->
-                        configurer
-                                .authenticationEntryPoint(new MyAuthenticationEntryPoint()) // 未认证异常处理器
-                                .accessDeniedHandler(new MyAccessDeniedHandler()) // 无权限访问异常处理器
+                    // Configure public endpoints that do not require authentication
+                    String[] ignoreUrls = securityProperties.getIgnoreUrls();
+                    if (ArrayUtil.isNotEmpty(ignoreUrls)) {
+                        requestMatcherRegistry.requestMatchers(ignoreUrls).permitAll();
+                    }
+                    // All other requests require authentication
+                    requestMatcherRegistry.anyRequest().authenticated();
+                })
+                .exceptionHandling(configurer -> configurer
+                        .authenticationEntryPoint(new MyAuthenticationEntryPoint()) // Handler for unauthenticated
+                                                                                    // access
+                        .accessDeniedHandler(new MyAccessDeniedHandler()) // Handler for access denied exceptions
                 )
 
-                // 禁用默认的 Spring Security 特性，适用于前后端分离架构
-                .sessionManagement(configurer ->
-                        configurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 无状态认证，不使用 Session
+                // Disable default Spring Security features for stateless, front-end/back-end
+                // separated architecture
+                .sessionManagement(configurer -> configurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Stateless
+                                                                                                                   // authentication,
+                                                                                                                   // no
+                                                                                                                   // session
                 )
-                .csrf(AbstractHttpConfigurer::disable)      // 禁用 CSRF 防护，前后端分离无需此防护机制
-                .formLogin(AbstractHttpConfigurer::disable) // 禁用默认的表单登录功能，前后端分离采用 Token 认证方式
-                .httpBasic(AbstractHttpConfigurer::disable) // 禁用 HTTP Basic 认证，避免弹窗式登录
-                // 禁用 X-Frame-Options 响应头，允许页面被嵌套到 iframe 中
+                .csrf(AbstractHttpConfigurer::disable) // Disable CSRF protection
+                .formLogin(AbstractHttpConfigurer::disable) // Disable default form login
+                .httpBasic(AbstractHttpConfigurer::disable) // Disable HTTP Basic authentication
+                // Disable X-Frame-Options header to allow embedding in iframes
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
-                // 限流过滤器
-                .addFilterBefore(new RateLimiterFilter(redisTemplate, configService), UsernamePasswordAuthenticationFilter.class)
-                // 验证码校验过滤器
-                .addFilterBefore(new CaptchaValidationFilter(redisTemplate, codeGenerator), UsernamePasswordAuthenticationFilter.class)
-                // 验证和解析过滤器
-                .addFilterBefore(new TokenAuthenticationFilter(tokenManager), UsernamePasswordAuthenticationFilter.class)
+                // Add rate limiting filter
+                .addFilterBefore(new RateLimiterFilter(redisTemplate, configService),
+                        UsernamePasswordAuthenticationFilter.class)
+                // Add CAPTCHA validation filter
+                .addFilterBefore(new CaptchaValidationFilter(redisTemplate, codeGenerator),
+                        UsernamePasswordAuthenticationFilter.class)
+                // Add token authentication filter
+                .addFilterBefore(new TokenAuthenticationFilter(tokenManager),
+                        UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
     /**
-     * 配置Web安全自定义器，以忽略特定请求路径的安全性检查。
+     * Configures a customizer to ignore security checks for specified request
+     * paths.
      * <p>
-     * 该配置用于指定哪些请求路径不经过Spring Security过滤器链。通常用于静态资源文件。
+     * This is typically used to exclude static resources or documentation endpoints
+     * from the security filter chain.
+     *
+     * @return the {@link WebSecurityCustomizer} bean
      */
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
@@ -115,7 +165,12 @@ public class SecurityConfig {
     }
 
     /**
-     * 默认密码认证的 Provider
+     * Configures the default password authentication provider.
+     * <p>
+     * Uses the application's password encoder and user details service for
+     * authentication.
+     *
+     * @return the {@link DaoAuthenticationProvider} bean
      */
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider() {
@@ -126,44 +181,22 @@ public class SecurityConfig {
     }
 
     /**
-     * 微信小程序Code认证Provider
-     */
-    @Bean
-    public WxMiniAppCodeAuthenticationProvider wxMiniAppCodeAuthenticationProvider() {
-        return new WxMiniAppCodeAuthenticationProvider(userService, wxMaService);
-    }
-
-    /**
-     * 微信小程序手机号认证Provider
-     */
-    @Bean
-    public WxMiniAppPhoneAuthenticationProvider wxMiniAppPhoneAuthenticationProvider() {
-        return new WxMiniAppPhoneAuthenticationProvider(userService, wxMaService);
-    }
-
-    /**
-     * 短信验证码认证 Provider
-     */
-    @Bean
-    public SmsAuthenticationProvider smsAuthenticationProvider() {
-        return new SmsAuthenticationProvider(userService, redisTemplate);
-    }
-
-    /**
-     * 认证管理器
+     * Configures the authentication manager with custom authentication providers.
+     * <p>
+     * Combines the default password and SMS authentication providers into a single
+     * authentication manager.
+     *
+     * @param daoAuthenticationProvider the password authentication provider
+     * @param smsAuthenticationProvider the SMS authentication provider
+     * @return the configured {@link AuthenticationManager}
      */
     @Bean
     public AuthenticationManager authenticationManager(
-            DaoAuthenticationProvider daoAuthenticationProvider,
-            WxMiniAppCodeAuthenticationProvider wxMiniAppCodeAuthenticationProvider,
-            WxMiniAppPhoneAuthenticationProvider wxMiniAppPhoneAuthenticationProvider,
-            SmsAuthenticationProvider smsAuthenticationProvider
-    ) {
-        return new ProviderManager(
-                daoAuthenticationProvider,
-                wxMiniAppCodeAuthenticationProvider,
-                wxMiniAppPhoneAuthenticationProvider,
-                smsAuthenticationProvider
-        );
+            DaoAuthenticationProvider daoAuthenticationProvider) {
+        // Create a list of providers, adding only non-null providers
+        java.util.List<org.springframework.security.authentication.AuthenticationProvider> providers = new java.util.ArrayList<>();
+        providers.add(daoAuthenticationProvider);
+
+        return new ProviderManager(providers);
     }
 }

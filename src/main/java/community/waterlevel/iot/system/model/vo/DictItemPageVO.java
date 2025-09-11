@@ -1,37 +1,46 @@
 package community.waterlevel.iot.system.model.vo;
 
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 字典项分页对象
+ * View object representing a paginated dictionary item record for API
+ * responses.
+ * <p>
+ * Encapsulates dictionary item ID, code, label, value, sort order, and status.
+ * Used to transfer
+ * paginated dictionary item data from the backend to the client in dictionary
+ * management features.
+ * </p>
  *
  * @author Ray.Hao
  * @since 0.0.1
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
-@Schema(description = "字典项分页对象")
+@Schema(description = "DictItemPage VO")
 @Getter
 @Setter
 public class DictItemPageVO {
 
-    @Schema(description = "字典项ID")
+    @Schema(description = "id")
     private Long id;
 
-    @Schema(description = "字典编码")
+    @Schema(description = "dictCode")
     private String dictCode;
 
-    @Schema(description = "字典标签")
+    @Schema(description = "label")
     private String label;
 
-    @Schema(description = "字典值")
+    @Schema(description = "value")
     private String value;
 
-    @Schema(description = "排序")
+    @Schema(description = "sort")
     private Integer sort;
 
-    @Schema(description = "状态（1:启用，0:禁用）")
+    @Schema(description = "Status (1: enabled; 0: disabled）")
     private Integer status;
 
 }

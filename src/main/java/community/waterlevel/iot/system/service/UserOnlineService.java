@@ -1,11 +1,7 @@
 package community.waterlevel.iot.system.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import community.waterlevel.iot.core.security.model.SysUserDetails;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -17,19 +13,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * 用户在线状态服务
- * 负责维护用户的在线状态和相关统计
+ * Service for managing user online status and related statistics.
+ * <p>
+ * Maintains the online status of users, provides real-time online user statistics,
+ * and notifies clients of online user count changes via WebSocket messaging.
+ * </p>
  *
  * @author Ray.Hao
  * @since 3.0.0
+ *
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Service
 @Slf4j
 public class UserOnlineService {
 
-    // 在线用户映射表，key为用户名，value为用户在线信息
     private final Map<String, UserOnlineInfo> onlineUsers = new ConcurrentHashMap<>();
-    
+
     private SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
 
@@ -37,46 +38,44 @@ public class UserOnlineService {
     public UserOnlineService(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
-    
+
     @Autowired(required = false)
     public void setMessagingTemplate(SimpMessagingTemplate messagingTemplate) {
         this.messagingTemplate = messagingTemplate;
     }
 
     /**
-     * 用户上线
+     * Registers a user as online and adds their session information.
      *
-     * @param username  用户名
-     * @param sessionId WebSocket会话ID（可选）
+     * @param username  the username of the user
+     * @param sessionId the session ID (if null, a new one is generated)
      */
     public void userConnected(String username, String sessionId) {
-        // 生成会话ID（如果未提供）
+        // Generate session ID if not provided
         String actualSessionId = sessionId != null ? sessionId : "session-" + System.nanoTime();
         UserOnlineInfo info = new UserOnlineInfo(username, actualSessionId, System.currentTimeMillis());
         onlineUsers.put(username, info);
-        log.info("用户[{}]上线，当前在线用户数：{}", username, onlineUsers.size());
-        
-        // 通知在线用户状态变更
+        log.info("User [{}] connected, current online user count: {}", username, onlineUsers.size());
+
         notifyOnlineUsersChange();
     }
 
     /**
-     * 用户下线
+     * Removes a user from the online list when they disconnect.
      *
-     * @param username 用户名
+     * @param username the username of the user
      */
     public void userDisconnected(String username) {
         onlineUsers.remove(username);
-        log.info("用户[{}]下线，当前在线用户数：{}", username, onlineUsers.size());
-        
-        // 通知在线用户状态变更
+        log.info("User [{}] disconnected, current online user count: {}", username, onlineUsers.size());
+
         notifyOnlineUsersChange();
     }
 
     /**
-     * 获取在线用户列表
+     * Retrieves a list of currently online users.
      *
-     * @return 在线用户名列表
+     * @return a list of online user DTOs
      */
     public List<UserOnlineDTO> getOnlineUsers() {
         return onlineUsers.values().stream()
@@ -85,58 +84,57 @@ public class UserOnlineService {
     }
 
     /**
-     * 获取在线用户数量
+     * Gets the current count of online users.
      *
-     * @return 在线用户数
+     * @return the number of online users
      */
     public int getOnlineUserCount() {
         return onlineUsers.size();
     }
 
     /**
-     * 检查用户是否在线
+     * Checks if a specific user is currently online.
      *
-     * @param username 用户名
-     * @return 是否在线
+     * @param username the username to check
+     * @return true if the user is online, false otherwise
      */
     public boolean isUserOnline(String username) {
         return onlineUsers.containsKey(username);
     }
 
     /**
-     * 通知所有客户端在线用户变更
+     * Notifies clients of changes in the online user count via WebSocket.
+     * If the messaging template is not initialized, logs a warning.
      */
     private void notifyOnlineUsersChange() {
         if (messagingTemplate == null) {
-            log.warn("消息模板尚未初始化，无法发送在线用户数量");
+            log.warn("Messaging template is not initialized, cannot send online user count");
             return;
         }
-        
-        // 发送简化版数据（仅数量）
         sendOnlineUserCount();
     }
-    
+
     /**
-     * 发送在线用户数量（简化版，不包含用户详情）
+     * Sends the current online user count to subscribed clients via WebSocket.
+     * If the messaging template is not initialized, logs a warning.
      */
     private void sendOnlineUserCount() {
         if (messagingTemplate == null) {
-            log.warn("消息模板尚未初始化，无法发送在线用户数量");
+            log.warn("Messaging template is not initialized, cannot send online user count");
             return;
         }
-        
+
         try {
-            // 直接发送数量，更轻量
             int count = onlineUsers.size();
             messagingTemplate.convertAndSend("/topic/online-count", count);
-            log.debug("已发送在线用户数量: {}", count);
+            log.debug("Sent online user count: {}", count);
         } catch (Exception e) {
-            log.error("发送在线用户数量失败", e);
+            log.error("Failed to send online user count", e);
         }
     }
 
     /**
-     * 用户在线信息
+     * Internal class representing online user session information.
      */
     @Data
     private static class UserOnlineInfo {
@@ -146,7 +144,7 @@ public class UserOnlineService {
     }
 
     /**
-     * 用户在线DTO（用于返回给前端）
+     * Data Transfer Object for online user information.
      */
     @Data
     public static class UserOnlineDTO {
@@ -155,7 +153,7 @@ public class UserOnlineService {
     }
 
     /**
-     * 在线用户变更事件
+     * Event class for representing changes in the online users list.
      */
     @Data
     private static class OnlineUsersChangeEvent {
@@ -164,4 +162,4 @@ public class UserOnlineService {
         private List<UserOnlineDTO> users;
         private long timestamp;
     }
-} 
+}

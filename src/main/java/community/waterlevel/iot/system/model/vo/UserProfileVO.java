@@ -7,43 +7,53 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * 个人中心用户信息
+ * View object representing user profile information for personal center
+ * features.
+ * <p>
+ * Encapsulates user ID, username, nickname, avatar, gender, mobile, email,
+ * department, roles, and creation time.
+ * Used to transfer user profile data from the backend to the client for display
+ * and update operations.
+ * </p>
  *
  * @author Ray
  * @since 2024/8/13
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
-@Schema(description = "个人中心用户信息")
+@Schema(description = "UserProfile VO")
 @Data
 public class UserProfileVO {
 
-    @Schema(description = "用户ID")
+    @Schema(description = "id")
     private Long id;
 
-    @Schema(description = "用户名")
+    @Schema(description = "username")
     private String username;
 
-    @Schema(description = "用户昵称")
+    @Schema(description = "nickname")
     private String nickname;
 
-    @Schema(description = "头像URL")
+    @Schema(description = "avatar")
     private String avatar;
 
-    @Schema(description = "性别")
+    @Schema(description = "gender")
     private Integer gender;
 
-    @Schema(description = "手机号")
+    @Schema(description = "mobile")
     private String mobile;
 
-    @Schema(description = "邮箱")
+    @Schema(description = "email")
     private String email;
 
-    @Schema(description = "部门名称")
+    @Schema(description = "deptName")
     private String deptName;
 
-    @Schema(description = "角色名称")
+    @Schema(description = "roleNames")
     private String roleNames;
 
-    @Schema(description = "创建时间")
+    @Schema(description = "createTime")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private Date createTime;
 

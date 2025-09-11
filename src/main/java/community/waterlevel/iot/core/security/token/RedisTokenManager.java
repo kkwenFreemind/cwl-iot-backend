@@ -24,30 +24,54 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * Redis Token 管理器
+ * Redis Token Manager responsible for managing authentication tokens using
+ * Redis as the storage backend.
  * <p>
- * 用于生成、解析、校验、刷新 JWT Token
+ * This service provides functionality to generate, parse, validate, refresh,
+ * and invalidate access and refresh tokens.
+ * It supports single-device login control, token-to-user mapping, and token
+ * expiration management, leveraging Redis for fast and scalable session
+ * handling.
+ * <p>
+ * The manager is typically used when the session type is set to "redis-token"
+ * and integrates with security properties for configuration.
  *
  * @author Ray.Hao
  * @since 2024/11/15
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @ConditionalOnProperty(value = "security.session.type", havingValue = "redis-token")
 @Service
 public class RedisTokenManager implements TokenManager {
 
+    /**
+     * Security properties for token configuration.
+     */
     private final SecurityProperties securityProperties;
+
+    /**
+     * Redis template for token storage and retrieval.
+     */
     private final RedisTemplate<String, Object> redisTemplate;
 
+    /**
+     * Constructs a new {@code RedisTokenManager} with the given security properties and Redis template.
+     *
+     * @param securityProperties the security properties for token configuration
+     * @param redisTemplate      the Redis template for token storage and retrieval
+     */
     public RedisTokenManager(SecurityProperties securityProperties, RedisTemplate<String, Object> redisTemplate) {
         this.securityProperties = securityProperties;
         this.redisTemplate = redisTemplate;
     }
 
     /**
-     * 生成 Token
+     * Generates a new access and refresh token pair for the given authentication and stores them in Redis.
      *
-     * @param authentication 用户认证信息
-     * @return 生成的 AuthenticationToken 对象
+     * @param authentication the user authentication information
+     * @return the generated {@link AuthenticationToken} object
      */
     @Override
     public AuthenticationToken generateToken(Authentication authentication) {
@@ -55,7 +79,6 @@ public class RedisTokenManager implements TokenManager {
         String accessToken = IdUtil.fastSimpleUUID();
         String refreshToken = IdUtil.fastSimpleUUID();
 
-        // 构建用户在线信息
         OnlineUser onlineUser = new OnlineUser(
                 user.getUserId(),
                 user.getUsername(),
@@ -80,17 +103,16 @@ public class RedisTokenManager implements TokenManager {
     }
 
     /**
-     * 根据 token 解析用户信息
+     * Parses the given token and retrieves the corresponding user information from Redis.
      *
-     * @param token JWT Token
-     * @return 构建的 Authentication 对象
+     * @param token the access token string
+     * @return the constructed {@link Authentication} object, or {@code null} if not found
      */
     @Override
     public Authentication parseToken(String token) {
         OnlineUser onlineUser = (OnlineUser) redisTemplate.opsForValue().get(formatTokenKey(token));
         if (onlineUser == null) return null;
 
-        // 构建用户权限集合
         Set<SimpleGrantedAuthority> authorities = null;
 
         Set<String> roles = onlineUser.getRoles();
@@ -100,16 +122,15 @@ public class RedisTokenManager implements TokenManager {
                     .collect(Collectors.toSet());
         }
 
-        // 构建用户详情对象
         SysUserDetails userDetails = buildUserDetails(onlineUser, authorities);
         return new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
     }
 
     /**
-     * 校验 Token 是否有效
+     * Validates whether the given access token is still valid (exists in Redis).
      *
-     * @param token  访问令牌
-     * @return 是否有效
+     * @param token the access token string
+     * @return {@code true} if the token is valid; {@code false} otherwise
      */
     @Override
     public boolean validateToken(String token) {
@@ -117,10 +138,10 @@ public class RedisTokenManager implements TokenManager {
     }
 
     /**
-     * 校验 RefreshToken 是否有效
+     * Validates whether the given refresh token is still valid (exists in Redis).
      *
-     * @param refreshToken  访问令牌
-     * @return 是否有效
+     * @param refreshToken the refresh token string
+     * @return {@code true} if the refresh token is valid; {@code false} otherwise
      */
     @Override
     public boolean validateRefreshToken(String refreshToken) {
@@ -128,10 +149,10 @@ public class RedisTokenManager implements TokenManager {
     }
 
     /**
-     * 刷新令牌
+     * Refreshes the access token using the given refresh token.
      *
-     * @param refreshToken 刷新令牌
-     * @return 新生成的 AuthenticationToken 对象
+     * @param refreshToken the refresh token string
+     * @return the newly generated {@link AuthenticationToken} object
      */
     @Override
     public AuthenticationToken refreshToken(String refreshToken) {
@@ -142,12 +163,10 @@ public class RedisTokenManager implements TokenManager {
 
         String oldAccessToken = (String) redisTemplate.opsForValue().get(StrUtil.format(RedisConstants.Auth.USER_ACCESS_TOKEN, onlineUser.getUserId()));
 
-        // 删除旧的访问令牌记录
         if (oldAccessToken != null) {
             redisTemplate.delete(formatTokenKey(oldAccessToken));
         }
 
-        // 生成新访问令牌并存储
         String newAccessToken = IdUtil.fastSimpleUUID();
         storeAccessToken(newAccessToken, onlineUser);
 
@@ -160,16 +179,16 @@ public class RedisTokenManager implements TokenManager {
     }
 
     /**
-     * 使访问令牌失效
+     * Invalidates the given access token and its associated refresh token in Redis.
      *
-     * @param token 访问令牌
+     * @param token the access token string
      */
     @Override
     public void invalidateToken(String token) {
         OnlineUser onlineUser = (OnlineUser) redisTemplate.opsForValue().get(formatTokenKey(token));
         if (onlineUser != null) {
             Long userId = onlineUser.getUserId();
-            // 1. 删除访问令牌相关
+
             String userAccessKey = StrUtil.format(RedisConstants.Auth.USER_ACCESS_TOKEN, userId);
             String accessToken = (String) redisTemplate.opsForValue().get(userAccessKey);
             if (accessToken != null) {
@@ -177,7 +196,6 @@ public class RedisTokenManager implements TokenManager {
                 redisTemplate.delete(userAccessKey);
             }
 
-            // 2. 删除刷新令牌相关
             String userRefreshKey = StrUtil.format(RedisConstants.Auth.USER_REFRESH_TOKEN, userId);
             String refreshToken = (String) redisTemplate.opsForValue().get(userRefreshKey);
             if (refreshToken != null) {
@@ -188,51 +206,46 @@ public class RedisTokenManager implements TokenManager {
     }
 
     /**
-     * 将访问令牌和刷新令牌存储至 Redis
+     * Stores the access token, refresh token, and user information in Redis.
      *
-     * @param accessToken 访问令牌
-     * @param refreshToken 刷新令牌
-     * @param onlineUser 在线用户信息
+     * @param accessToken  the access token string
+     * @param refreshToken the refresh token string
+     * @param onlineUser   the online user information
      */
     private void storeTokensInRedis(String accessToken, String refreshToken, OnlineUser onlineUser) {
-        // 访问令牌 -> 用户信息
         setRedisValue(formatTokenKey(accessToken), onlineUser, securityProperties.getSession().getAccessTokenTimeToLive());
-
-        // 刷新令牌 -> 用户信息
         String refreshTokenKey = StrUtil.format(RedisConstants.Auth.REFRESH_TOKEN_USER, refreshToken);
         setRedisValue(refreshTokenKey, onlineUser, securityProperties.getSession().getRefreshTokenTimeToLive());
-
-        // 用户ID -> 刷新令牌
         setRedisValue(StrUtil.format(RedisConstants.Auth.USER_REFRESH_TOKEN, onlineUser.getUserId()),
                 refreshToken,
                 securityProperties.getSession().getRefreshTokenTimeToLive());
     }
 
     /**
-     * 处理单设备登录控制
+     * Handles single-device login control by removing old access tokens if multi-login is not allowed.
      *
-     * @param userId 用户ID
-     * @param accessToken 新生成的访问令牌
+     * @param userId      the user ID
+     * @param accessToken the newly generated access token
      */
     private void handleSingleDeviceLogin(Long userId, String accessToken) {
         Boolean allowMultiLogin = securityProperties.getSession().getRedisToken().getAllowMultiLogin();
         String userAccessKey = StrUtil.format(RedisConstants.Auth.USER_ACCESS_TOKEN, userId);
-        // 单设备登录控制，删除旧的访问令牌
+
         if (!allowMultiLogin) {
             String oldAccessToken = (String) redisTemplate.opsForValue().get(userAccessKey);
             if (oldAccessToken != null) {
                 redisTemplate.delete(formatTokenKey(oldAccessToken));
             }
         }
-        // 存储访问令牌映射（用户ID -> 访问令牌），用于单设备登录控制删除旧的访问令牌和刷新令牌时删除旧令牌
+
         setRedisValue(userAccessKey, accessToken, securityProperties.getSession().getAccessTokenTimeToLive());
     }
 
     /**
-     * 存储新的访问令牌
+     * Stores a new access token and updates the user-to-token mapping in Redis.
      *
-     * @param newAccessToken 新访问令牌
-     * @param onlineUser 在线用户信息
+     * @param newAccessToken the new access token string
+     * @param onlineUser     the online user information
      */
     private void storeAccessToken(String newAccessToken, OnlineUser onlineUser) {
         setRedisValue(StrUtil.format(RedisConstants.Auth.ACCESS_TOKEN_USER, newAccessToken), onlineUser, securityProperties.getSession().getAccessTokenTimeToLive());
@@ -241,11 +254,11 @@ public class RedisTokenManager implements TokenManager {
     }
 
     /**
-     * 构建用户详情对象
+     * Builds a {@link SysUserDetails} object from the given online user and authorities.
      *
-     * @param onlineUser 在线用户信息
-     * @param authorities 权限集合
-     * @return SysUserDetails 用户详情
+     * @param onlineUser  the online user information
+     * @param authorities the set of granted authorities
+     * @return the constructed {@link SysUserDetails} object
      */
     private SysUserDetails buildUserDetails(OnlineUser onlineUser, Set<SimpleGrantedAuthority> authorities) {
         SysUserDetails userDetails = new SysUserDetails();
@@ -258,37 +271,38 @@ public class RedisTokenManager implements TokenManager {
     }
 
     /**
-     * 格式化访问令牌的 Redis 键
+     * Formats the Redis key for the given access token.
      *
-     * @param token 访问令牌
-     * @return 格式化后的 Redis 键
+     * @param token the access token string
+     * @return the formatted Redis key
      */
     private String formatTokenKey(String token) {
         return StrUtil.format(RedisConstants.Auth.ACCESS_TOKEN_USER, token);
     }
 
     /**
-     * 格式化刷新令牌的 Redis 键
+     * Formats the Redis key for the given refresh token.
      *
-     * @param refreshToken 访问令牌
-     * @return 格式化后的 Redis 键
+     * @param refreshToken the refresh token string
+     * @return the formatted Redis key
      */
     private String formatRefreshTokenKey(String refreshToken) {
         return StrUtil.format(RedisConstants.Auth.REFRESH_TOKEN_USER, refreshToken);
     }
 
     /**
-     * 将值存储到 Redis
+     * Stores a value in Redis with the specified key and time-to-live.
      *
-     * @param key   键
-     * @param value 值
-     * @param ttl   过期时间（秒），-1表示永不过期
+     * @param key   the Redis key
+     * @param value the value to store
+     * @param ttl   the expiration time in seconds; -1 means never expire
      */
     private void setRedisValue(String key, Object value, int ttl) {
         if (ttl != -1) {
             redisTemplate.opsForValue().set(key, value, ttl, TimeUnit.SECONDS);
         } else {
-            redisTemplate.opsForValue().set(key, value); // ttl=-1时永不过期
+            redisTemplate.opsForValue().set(key, value); 
         }
     }
 }
+

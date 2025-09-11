@@ -4,19 +4,26 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
- * 部门查询对象
+ * Query object for searching and filtering department records.
+ * <p>
+ * Supports keyword-based search on department name and filtering by status.
+ * Used for paginated or filtered queries in department management features.
+ * </p>
  *
  * @author haoxr
  * @since 2022/6/11
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
-@Schema(description ="部门分页查询对象")
+@Schema(description ="Dept Query")
 @Data
 public class DeptQuery {
 
-    @Schema(description="关键字(部门名称)")
+    @Schema(description="keywords(Department Name)")
     private String keywords;
 
-    @Schema(description="状态(1->正常；0->禁用)")
+    @Schema(description="Status (1->normal; 0->disabled)")
     private Integer status;
 
 }

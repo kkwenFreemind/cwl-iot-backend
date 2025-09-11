@@ -7,10 +7,23 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-@Schema(description ="字典分页查询对象")
+/**
+ * Page query object for searching and filtering dictionary records.
+ * <p>
+ * Supports keyword-based search on dictionary name and provides pagination features
+ * via the base class. Used for paginated queries in dictionary management.
+ * </p>
+ * 
+ * @author youlaitech
+ * @since 2024-08-27 10:31
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11 
+ */
+@Schema(description ="Dictionary page query object")
 public class DictPageQuery extends BasePageQuery {
 
-    @Schema(description="关键字(字典名称)")
+    @Schema(description="Keyword (dictionary name)")
     private String keywords;
 
 }

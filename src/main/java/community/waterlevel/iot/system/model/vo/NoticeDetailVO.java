@@ -7,36 +7,43 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 阅读通知公告VO
+ * View object representing detailed notice/announcement information for API responses.
+ * <p>
+ * Encapsulates notice ID, title, content, type, publisher, priority, publish status, and publish time.
+ * Used to transfer detailed notice data from the backend to the client in notice management and reading features.
+ * </p>
  *
  * @author Theo
  * @since 2024-9-8 01:25:06
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Data
 public class NoticeDetailVO {
 
-    @Schema(description = "通知ID")
+    @Schema(description = "id")
     private Long id;
 
-    @Schema(description = "通知标题")
+    @Schema(description = "title")
     private String title;
 
-    @Schema(description = "通知内容")
+    @Schema(description = "content")
     private String content;
 
-    @Schema(description = "通知类型")
+    @Schema(description = "type")
     private Integer type;
 
-    @Schema(description = "发布人")
+    @Schema(description = "publisherName")
     private String publisherName;
 
-    @Schema(description = "优先级(L-低 M-中 H-高)")
+    @Schema(description = "Priority (L-Low M-Medium H-High)")
     private String level;
 
-    @Schema(description = "发布状态(0-未发布 1已发布 2已撤回) 冗余字段，方便判断是否已经发布")
+    @Schema(description = "Release status (0-Not released 1 Released 2 Withdrawn) Redundant field to facilitate the determination of whether it has been released")
     private Integer publishStatus;
 
-    @Schema(description = "发布时间")
+    @Schema(description = "publishTime")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime publishTime;
 }

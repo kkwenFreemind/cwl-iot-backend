@@ -4,53 +4,60 @@ import lombok.Data;
 import java.util.Set;
 
 /**
- * 用户认证凭证信息
+ * Model representing user authentication credentials and profile information.
+ * Includes user ID, username, password, status, department, roles, and data
+ * access scope.
+ * Used for authentication, authorization, and user context management in
+ * security modules.
  *
  * @author Ray.Hao
  * @since 2022/10/22
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Data
 public class UserAuthCredentials {
 
     /**
-     * 用户ID
+     * Unique identifier of the user.
      */
     private Long userId;
 
     /**
-     * 用户名
+     * Username for authentication.
      */
     private String username;
 
     /**
-     * 昵称
+     * User's display nickname.
      */
     private String nickname;
 
     /**
-     * 部门ID
+     * Department ID to which the user belongs.
      */
     private Long deptId;
 
     /**
-     * 用户密码
+     * User's password for authentication.
      */
     private String password;
 
     /**
-     * 状态（1:启用；0:禁用）
+     * Account status (1: enabled; 0: disabled).
      */
     private Integer status;
 
     /**
-     * 用户所属的角色集合
+     * Set of roles assigned to the user.
      */
     private Set<String> roles;
 
     /**
-     * 数据权限范围，用于控制用户可以访问的数据级别
+     * Data access scope, used to control the level of data the user can access.
      *
-     * @see com.youlai.iot.common.enums.DataScopeEnum
+     * @see DataScopeEnum
      */
     private Integer dataScope;
 

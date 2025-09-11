@@ -27,10 +27,16 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 /**
- * WebSocket配置
+ * Configuration class for WebSocket message broker.
+ * Sets up STOMP endpoints, message broker prefixes, and client inbound channel interceptors
+ * for authentication, user binding, and connection lifecycle management.
+ * Integrates JWT-based authentication and user session tracking for secure real-time communication.
  *
  * @author Ray.Hao
  * @since 3.0.0
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11 
  */
 @EnableWebSocketMessageBroker
 @Configuration
@@ -40,47 +46,59 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   private final TokenManager tokenManager;
   private final WebSocketService webSocketService;
 
+  /**
+   * Constructs the WebSocketConfig with required dependencies.
+   *
+   * @param tokenManager     the token manager for JWT authentication
+   * @param webSocketService the WebSocket service for user connection management
+   */
   public WebSocketConfig(TokenManager tokenManager, @Lazy WebSocketService webSocketService) {
     this.tokenManager = tokenManager;
     this.webSocketService = webSocketService;
   }
 
   /**
-   * 注册一个端点，客户端通过这个端点进行连接
+   * Registers a STOMP endpoint for client WebSocket connections.
+   * <p>
+   * Configures the endpoint at {@code /ws} and allows cross-origin requests from
+   * any origin.
+   *
+   * @param registry the {@link StompEndpointRegistry} to configure
    */
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
     registry
-      // 注册 /ws 的端点
-      .addEndpoint("/ws")
-      // 允许跨域
-      .setAllowedOriginPatterns("*");
+        .addEndpoint("/ws")
+        .setAllowedOriginPatterns("*");
   }
 
-
   /**
-   * 配置消息代理
+   * Configures the message broker for WebSocket communication.
+   * <p>
+   * Sets application destination prefix, enables simple broker for topics and
+   * queues, and configures user destination prefix.
+   *
+   * @param registry the {@link MessageBrokerRegistry} to configure
    */
   @Override
   public void configureMessageBroker(MessageBrokerRegistry registry) {
-    // 客户端发送消息的请求前缀
     registry.setApplicationDestinationPrefixes("/app");
-
-    // 客户端订阅消息的请求前缀，topic一般用于广播推送，queue用于点对点推送
     registry.enableSimpleBroker("/topic", "/queue");
-
-    // 服务端通知客户端的前缀，可以不设置，默认为user
     registry.setUserDestinationPrefix("/user");
   }
 
-
   /**
-   * 配置客户端入站通道拦截器
+   * Configures the client inbound channel interceptor for WebSocket connections.
    * <p>
-   * 核心功能：
-   * 1. 连接建立时解析令牌并绑定用户身份
-   * 2. 连接关闭时触发下线通知
-   * 3. 异常Token的防御性处理
+   * Core features:
+   * <ul>
+   * <li>Parses and validates JWT tokens on connection establishment, binding user
+   * identity to the session.</li>
+   * <li>Triggers user offline notification on connection close.</li>
+   * <li>Handles invalid or missing tokens defensively.</li>
+   * </ul>
+   *
+   * @param registration the {@link ChannelRegistration} to configure
    */
   @Override
   public void configureClientInboundChannel(ChannelRegistration registration) {
@@ -93,72 +111,68 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         }
 
         try {
-          // 处理客户端连接请求
+          // Handle client connection request
           if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-            /*
-             * 安全校验流程：
-             * 1. 从HEADER中获取Authorization值
-             * 2. 校验Bearer Token格式合法性
-             * 3. 解析并验证JWT有效性
-             * 4. 绑定用户身份到当前会话
-             */
+            // Security validation process:
+            // 1. Get Authorization value from header
+            // 2. Validate Bearer token format
+            // 3. Parse and verify JWT
+            // 4. Bind user identity to session
             String authorization = accessor.getFirstNativeHeader(HttpHeaders.AUTHORIZATION);
 
-            // 防御性校验：确保Authorization头存在且格式正确
+            // Defensive check: ensure Authorization header exists and is valid
             if (StrUtil.isBlank(authorization) || !authorization.startsWith("Bearer ")) {
-              log.warn("非法连接请求：缺少有效的Authorization头");
+              log.warn("Illegal connection request: missing valid Authorization header");
               throw new AuthenticationCredentialsNotFoundException("Missing authorization header");
             }
 
-            // 提取并处理JWT令牌（移除Bearer前缀）
+            // Extract and process JWT token (remove Bearer prefix)
             String token = authorization.substring(7);
             Authentication authentication = tokenManager.parseToken(token);
 
-            // 令牌解析失败处理
+            // Handle token parsing failure
             if (authentication == null) {
-              log.error("令牌解析失败：{}", token);
+              log.error("Token parsing failed: {}", token);
               throw new BadCredentialsException("Invalid token");
             }
 
-            // 获取用户详细信息
+            // Get user details
             SysUserDetails userDetails = (SysUserDetails) authentication.getPrincipal();
             if (userDetails == null || StrUtil.isBlank(userDetails.getUsername())) {
-              log.error("无效的用户凭证：{}", token);
+              log.error("Invalid user credentials: {}", token);
               throw new BadCredentialsException("Invalid user credentials");
             }
 
             String username = userDetails.getUsername();
-            log.info("WebSocket连接建立：用户[{}]", username);
+            log.info("WebSocket connection established: user [{}]", username);
 
-            // 绑定用户身份到当前会话（重要：用于@SendToUser等注解）
+            // Bind user identity to session (important for @SendToUser, etc.)
             accessor.setUser(authentication);
 
-            // 记录用户上线状态
+            // Record user online status
             webSocketService.userConnected(username, accessor.getSessionId());
 
           }
-          // 处理客户端断开请求
+          // Handle client disconnect request
           else if (StompCommand.DISCONNECT.equals(accessor.getCommand())) {
-            /*
-             * 注意：只有成功建立过认证的连接才会触发下线事件
-             * 防止未认证成功的连接产生脏数据
-             */
+            // Only trigger offline event for successfully authenticated connections
+            // Prevent dirty data from unauthenticated connections
             Authentication authentication = (Authentication) accessor.getUser();
             if (authentication != null && authentication.isAuthenticated()) {
               String username = ((SysUserDetails) authentication.getPrincipal()).getUsername();
-              log.info("WebSocket连接关闭：用户[{}]", username);
+              log.info("WebSocket connection closed: user [{}]", username);
 
-              // 记录用户下线状态
+              // Record user offline status
               webSocketService.userDisconnected(username);
             }
           }
         } catch (AuthenticationException ex) {
-          // 认证失败时强制关闭连接
-          log.error("连接认证失败：{}", ex.getMessage());
+          // Force close connection on authentication failure
+          log.error("Connection authentication failed: {}", ex.getMessage());
           throw ex;
         } catch (Exception ex) {
-          // 捕获其他未知异常
-          log.error("WebSocket连接处理异常：", ex);
+          // Catch all other unknown exceptions
+          log.error("WebSocket connection processing error:", ex);
           throw new MessagingException("Connection processing failed");
         }
 

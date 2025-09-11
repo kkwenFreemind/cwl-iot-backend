@@ -4,21 +4,27 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
- * 修改密码表单
+ * Password update form object for secure password change operations.
+ * Handles user password modifications with current password verification
+ * and confirmation validation to ensure account security and prevent
+ * unauthorized changes.
  *
  * @author Ray.Hao
  * @since 2024/8/13
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
-@Schema(description = "修改密码表单")
+@Schema(description = "PasswordUpdate Form")
 @Data
 public class PasswordUpdateForm {
 
-    @Schema(description = "原密码")
+    @Schema(description = "old Password")
     private String oldPassword;
 
-    @Schema(description = "新密码")
+    @Schema(description = "new Password")
     private String newPassword;
 
-    @Schema(description = "确认密码")
+    @Schema(description = "confirm Password")
     private String confirmPassword;
 }

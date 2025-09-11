@@ -5,66 +5,86 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 用户持久化对象
+ * UserBO is a business object representing user data for business logic and
+ * data transfer purposes.
+ * <p>
+ * This class encapsulates user attributes such as ID, username, nickname,
+ * contact information, status, department, roles, and creation time.
+ * Used for transferring user data between service and presentation layers in
+ * the IoT backend.
  *
  * @author haoxr
  * @since 2022/6/10
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Data
 public class UserBO {
 
     /**
-     * 用户ID
+     * Unique user identifier for database reference.
+     * Primary key used for user identification and relationship mapping.
      */
     private Long id;
 
     /**
-     * 账户名
+     * System login username for authentication.
+     * Unique identifier used for user account access and login procedures.
      */
     private String username;
 
     /**
-     * 昵称
+     * User display name or friendly nickname.
+     * Human-readable name shown throughout the application interface.
      */
     private String nickname;
 
     /**
-     * 手机号
+     * Primary contact mobile phone number.
+     * Used for communication, notifications, and two-factor authentication.
      */
     private String mobile;
 
     /**
-     * 性别(1->男；2->女)
+     * User gender classification for demographic data.
+     * 1 = Male, 2 = Female for user profile and statistical purposes.
      */
     private Integer gender;
 
     /**
-     * 头像URL
+     * Profile avatar image URL for visual identification.
+     * Link to user's profile picture for display in interfaces.
      */
     private String avatar;
 
     /**
-     * 邮箱
+     * Primary email address for communication and recovery.
+     * Used for system notifications, account recovery, and official communications.
      */
     private String email;
 
     /**
-     * 状态: 1->启用;0->禁用
+     * Account activation status for access control.
+     * 1 = Enabled (active account), 0 = Disabled (suspended account)
      */
     private Integer status;
 
     /**
-     * 部门名称
+     * Department name for organizational context.
+     * Human-readable department affiliation for organizational structure display.
      */
     private String deptName;
 
     /**
-     * 角色名称，多个使用英文逗号(,)分割
+     * Assigned role names for permission context.
+     * Comma-separated list of role names for authorization and UI customization.
      */
     private String roleNames;
 
     /**
-     * 创建时间
+     * Account creation timestamp for audit tracking.
+     * Records when the user account was initially created in the system.
      */
     private LocalDateTime createTime;
 }

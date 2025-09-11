@@ -8,20 +8,23 @@ import cn.hutool.extra.spring.SpringUtil;
 import cn.hutool.json.JSONUtil;
 import cn.idev.excel.context.AnalysisContext;
 import cn.idev.excel.event.AnalysisEventListener;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import community.waterlevel.iot.common.constant.SystemConstants;
 import community.waterlevel.iot.common.enums.StatusEnum;
 import community.waterlevel.iot.common.result.ExcelResult;
-import community.waterlevel.iot.system.converter.UserConverter;
+import community.waterlevel.iot.system.converter.UserJpaConverter;
 import community.waterlevel.iot.system.enums.DictCodeEnum;
 import community.waterlevel.iot.system.model.dto.UserImportDTO;
-import community.waterlevel.iot.system.model.entity.*;
+
 import community.waterlevel.iot.system.service.*;
-
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import community.waterlevel.iot.system.model.entity.DeptJpa;
+import community.waterlevel.iot.system.model.entity.DictItemJpa;
+import community.waterlevel.iot.system.model.entity.RoleJpa;
+import community.waterlevel.iot.system.model.entity.UserJpa;
+import community.waterlevel.iot.system.model.entity.UserRoleJpa;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,125 +32,189 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 用户导入监听器
+ * UserImportListener is an EasyExcel event listener for handling user import
+ * operations from Excel files.
  * <p>
- * <a href="https://easyexcel.opensource.alibaba.com/docs/current/quickstart/read#%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84%E8%AF%BB%E7%9A%84%E7%9B%91%E5%90%AC%E5%99%A8">最简单的读的监听器</a>
+ * This listener validates, processes, and persists each row of user data,
+ * collecting import results and error messages. It leverages Spring beans for
+ * user, role, and department management, and supports batch role assignment and
+ * data validation.
+ * <p>
+ * Designed for use with the EasyExcel library to enable efficient and robust
+ * user data import in the IoT backend.
  *
  * @author Ray
  * @since 2022/4/10
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Slf4j
 public class UserImportListener extends AnalysisEventListener<UserImportDTO> {
 
     /**
-     * Excel 导入结果
+     * Excel import result container for tracking processing statistics.
+     * Accumulates valid/invalid record counts and error messages during import.
      */
     @Getter
     private final ExcelResult excelResult;
 
-    private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
-    private final UserConverter userConverter;
-    private final UserRoleService userRoleService;
-
-    private final List<Role> roleList;
-    private final List<Dept> deptList;
-    private final List<DictItem> genderList;
+    /**
+     * JPA service for user entity operations and validation queries.
+     */
+    private final UserJpaService userService;
 
     /**
-     * 当前行
+     * Spring Security password encoder for secure password hashing.
+     */
+    private final PasswordEncoder passwordEncoder;
+
+    /**
+     * MapStruct converter for DTO to entity transformation.
+     */
+    private final UserJpaConverter userConverter;
+
+    /**
+     * JPA service for managing user-role associations.
+     */
+    private final UserRoleJpaService userRoleService;
+
+    /**
+     * Pre-loaded active role list for efficient role code resolution.
+     * Cached during initialization to avoid repeated database queries.
+     */
+    private final List<RoleJpa> roleList;
+
+    /**
+     * Pre-loaded department list for efficient department code resolution.
+     * Cached during initialization to avoid repeated database queries.
+     */
+    private final List<DeptJpa> deptList;
+
+    /**
+     * Pre-loaded gender dictionary items for label-to-value mapping.
+     * Cached during initialization for efficient gender validation.
+     */
+    private final List<DictItemJpa> genderList;
+
+    /**
+     * Current Excel row number being processed.
+     * Used for error message context and progress tracking.
      */
     private Integer currentRow = 1;
 
     /**
-     * 构造方法
-     * <p>在构造方法中给需要查询的内容查询好，尽量避免每条数据查询一次</p>
+     * Constructor for user import listener with dependency injection and data
+     * pre-loading.
+     * Initializes all required services and caches reference data to optimize
+     * per-row processing performance by avoiding repeated database queries.
+     * 
+     * <p>
+     * Pre-loads active roles, departments, and gender dictionary items
+     * for efficient lookup during data validation and transformation.
+     * </p>
      */
     public UserImportListener() {
-        this.userService = SpringUtil.getBean(UserService.class);
+        this.userService = SpringUtil.getBean(UserJpaService.class);
         this.passwordEncoder = SpringUtil.getBean(PasswordEncoder.class);
-        this.userRoleService = SpringUtil.getBean(UserRoleService.class);
-        this.userConverter = SpringUtil.getBean(UserConverter.class);
-        this.roleList = SpringUtil.getBean(RoleService.class)
-                .list(new LambdaQueryWrapper<Role>().eq(Role::getStatus, StatusEnum.ENABLE.getValue())
-                        .select(Role::getId, Role::getCode));
-        this.deptList = SpringUtil.getBean(DeptService.class)
-                .list(new LambdaQueryWrapper<Dept>().select(Dept::getId, Dept::getCode));
-        this.genderList = SpringUtil.getBean(DictItemService.class)
-                .list(new LambdaQueryWrapper<DictItem>().eq(DictItem::getDictCode, DictCodeEnum.GENDER.getValue()));
+        this.userRoleService = SpringUtil.getBean(UserRoleJpaService.class);
+        this.userConverter = SpringUtil.getBean(UserJpaConverter.class);
+        this.roleList = SpringUtil.getBean(RoleJpaService.class)
+                .list(new LambdaQueryWrapper<RoleJpa>().eq(RoleJpa::getStatus, StatusEnum.ENABLE.getValue())
+                        .select(RoleJpa::getId, RoleJpa::getCode));
+        this.deptList = SpringUtil.getBean(DeptJpaService.class)
+                .list(new LambdaQueryWrapper<DeptJpa>().select(DeptJpa::getId, DeptJpa::getCode));
+        this.genderList = SpringUtil.getBean(SystemDictItemJpaService.class)
+                .getDictItems(DictCodeEnum.GENDER.getValue()).stream()
+                .map(item -> {
+                    DictItemJpa dictItem = new DictItemJpa();
+                    dictItem.setValue(item.getValue());
+                    dictItem.setLabel(item.getLabel());
+                    return dictItem;
+                }).collect(Collectors.toList());
         this.excelResult = new ExcelResult();
     }
 
     /**
-     * 每一条数据解析都会来调用
+     * Processes each parsed Excel row with comprehensive validation and
+     * persistence.
+     * Performs multi-level data validation including field presence, format
+     * validation,
+     * and business rule checks, followed by entity transformation and database
+     * persistence
+     * with role assignment and error tracking.
+     * 
      * <p>
-     * 1. 数据校验；全字段校验
-     * 2. 数据持久化；
+     * Processing workflow:
+     * 1. Comprehensive field validation (required fields, format validation)
+     * 2. Business rule validation (username uniqueness, mobile format)
+     * 3. Entity transformation and relationship resolution
+     * 4. Database persistence with user-role association
+     * 5. Result tracking and error reporting
+     * </p>
      *
-     * @param userImportDTO 一行数据，类似于 {@link AnalysisContext#readRowHolder()}
+     * @param userImportDTO   parsed row data similar to
+     *                        {@link AnalysisContext#readRowHolder()}
+     * @param analysisContext EasyExcel analysis context for additional processing
+     *                        info
      */
     @Override
     public void invoke(UserImportDTO userImportDTO, AnalysisContext analysisContext) {
-        log.info("解析到一条用户数据:{}", JSONUtil.toJsonStr(userImportDTO));
+        log.info("Parsed to a user profile:{}", JSONUtil.toJsonStr(userImportDTO));
 
         boolean validation = true;
-        String errorMsg = "第" + currentRow + "行数据校验失败：";
+        String errorMsg = "Validation failed at row " + currentRow + ":";
         String username = userImportDTO.getUsername();
         if (StrUtil.isBlank(username)) {
-            errorMsg += "用户名为空；";
+            errorMsg += "User name is empty;";
             validation = false;
         } else {
-            long count = userService.count(new LambdaQueryWrapper<User>().eq(User::getUsername, username));
+            long count = userService.count(new LambdaQueryWrapper<UserJpa>().eq(UserJpa::getUsername, username));
             if (count > 0) {
-                errorMsg += "用户名已存在；";
+                errorMsg += "The user name already exists;";
                 validation = false;
             }
         }
 
         String nickname = userImportDTO.getNickname();
         if (StrUtil.isBlank(nickname)) {
-            errorMsg += "用户昵称为空；";
+            errorMsg += "The user nickname is empty;";
             validation = false;
         }
 
         String mobile = userImportDTO.getMobile();
         if (StrUtil.isBlank(mobile)) {
-            errorMsg += "手机号码为空；";
+            errorMsg += "The mobile phone number is empty;";
             validation = false;
         } else {
             if (!Validator.isMobile(mobile)) {
-                errorMsg += "手机号码不正确；";
+                errorMsg += "Incorrect mobile phone number;";
                 validation = false;
             }
         }
 
         if (validation) {
-            // 校验通过，持久化至数据库
-            User entity = userConverter.toEntity(userImportDTO);
-            entity.setPassword(passwordEncoder.encode(SystemConstants.DEFAULT_PASSWORD));   // 默认密码
-            // 性别逆向翻译 根据字典标签得到字典值
+            UserJpa entity = userConverter.toEntity(userImportDTO);
+            entity.setPassword(passwordEncoder.encode(SystemConstants.DEFAULT_PASSWORD)); 
             String genderLabel = userImportDTO.getGenderLabel();
             entity.setGender(getGenderValue(genderLabel));
-            // 角色解析
             String roleCodes = userImportDTO.getRoleCodes();
             List<Long> roleIds = getRoleIds(roleCodes);
-            // 部门解析
             String deptCode = userImportDTO.getDeptCode();
             entity.setDeptId(getDeptId(deptCode));
 
             boolean saveResult = userService.save(entity);
             if (saveResult) {
                 excelResult.setValidCount(excelResult.getValidCount() + 1);
-                // 保存用户角色关联
                 if (CollectionUtil.isNotEmpty(roleIds)) {
-                    List<UserRole> userRoles = roleIds.stream()
-                            .map(roleId -> new UserRole(entity.getId(), roleId))
+                    List<UserRoleJpa> userRoles = roleIds.stream()
+                            .map(roleId -> new UserRoleJpa(entity.getId(), roleId))
                             .collect(Collectors.toList());
                     userRoleService.saveBatch(userRoles);
                 }
             } else {
                 excelResult.setInvalidCount(excelResult.getInvalidCount() + 1);
-                errorMsg += "第" + currentRow + "行数据保存失败；";
+                errorMsg += "Failed to save data at row " + currentRow + ".";
                 excelResult.getMessageList().add(errorMsg);
             }
         } else {
@@ -157,12 +224,13 @@ public class UserImportListener extends AnalysisEventListener<UserImportDTO> {
         currentRow++;
     }
 
-
     /**
-     * 根据角色编码获取角色ID
+     * Resolves role IDs from comma-separated role codes.
+     * Parses the role codes string and maps each code to its corresponding
+     * role ID using the pre-loaded role cache, with deduplication.
      *
-     * @param roleCodes 角色编码 逗号分隔
-     * @return 角色ID集合
+     * @param roleCodes comma-separated role codes from Excel input
+     * @return list of unique role IDs, or empty list if no valid codes found
      */
     private List<Long> getRoleIds(String roleCodes) {
         if (StrUtil.isNotBlank(roleCodes)) {
@@ -180,31 +248,35 @@ public class UserImportListener extends AnalysisEventListener<UserImportDTO> {
     }
 
     /**
-     * 根据部门编码获取部门ID
+     * Resolves department ID from department code.
+     * Maps the department code to its corresponding ID using the
+     * pre-loaded department cache for efficient lookup.
      *
-     * @param deptCode 部门编码
-     * @return 部门ID
+     * @param deptCode department code from Excel input
+     * @return department ID if found, null otherwise
      */
     private Long getDeptId(String deptCode) {
         if (StrUtil.isNotBlank(deptCode)) {
             return this.deptList.stream().filter(r -> r.getCode().equals(deptCode))
-                    .findFirst().map(Dept::getId).orElse(null);
+                    .findFirst().map(DeptJpa::getId).orElse(null);
         }
         return null;
     }
 
     /**
-     * 根据性别标签获取性别值
+     * Converts gender label to numeric gender value.
+     * Maps human-readable gender label to its corresponding dictionary value
+     * using the pre-loaded gender dictionary cache.
      *
-     * @param genderLabel 性别标签
-     * @return 性别值
+     * @param genderLabel gender label from Excel input (e.g., "男", "女")
+     * @return numeric gender value if found, null otherwise
      */
     private Integer getGenderValue(String genderLabel) {
         if (StrUtil.isNotBlank(genderLabel)) {
             return this.genderList.stream()
                     .filter(r -> r.getLabel().equals(genderLabel))
                     .findFirst()
-                    .map(DictItem::getValue)
+                    .map(DictItemJpa::getValue)
                     .map(Convert::toInt)
                     .orElse(null);
         }
@@ -212,11 +284,15 @@ public class UserImportListener extends AnalysisEventListener<UserImportDTO> {
     }
 
     /**
-     * 所有数据解析完成会来调用
+     * Callback method invoked after all Excel data has been processed.
+     * Provides a hook for cleanup operations and final processing summary.
+     * Logs completion status for monitoring and debugging purposes.
+     *
+     * @param analysisContext EasyExcel analysis context with processing metadata
      */
     @Override
     public void doAfterAllAnalysed(AnalysisContext analysisContext) {
-        log.info("所有数据解析完成！");
+        log.info("All data analysis completed!");
     }
 
 }

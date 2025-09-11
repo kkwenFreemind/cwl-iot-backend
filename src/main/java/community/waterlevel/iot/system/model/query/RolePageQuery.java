@@ -10,24 +10,31 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 /**
- * 角色分页查询对象
+ * Page query object for searching and filtering role records.
+ * <p>
+ * Supports keyword-based search on role name or code, and filtering by start and end date.
+ * Inherits pagination features from the base class. Used for paginated queries in role management features.
+ * </p>
  *
  * @author Ray
  * @since 2022/6/3
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
-@Schema(description = "角色分页查询对象")
+@Schema(description = "Role paging query object")
 @Getter
 @Setter
 public class RolePageQuery extends BasePageQuery {
 
-    @Schema(description="关键字(角色名称/角色编码)")
+    @Schema(description="Keywords (role name/role code)")
     private String keywords;
 
-    @Schema(description="开始日期")
+    @Schema(description="start Date")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime startDate;
 
-    @Schema(description="结束日期")
+    @Schema(description="end Date")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime endDate;
 }

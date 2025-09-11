@@ -12,21 +12,34 @@ import org.springframework.context.annotation.Configuration;
 import java.awt.*;
 
 /**
- * 验证码自动装配配置
+ * Auto-configuration class for captcha generation.
+ * Defines beans for captcha code generators and font configuration,
+ * using properties from {@link CaptchaProperties}.
+ * Supports both math and random captcha types.
  *
  * @author haoxr
  * @since 2023/11/24
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Configuration
 public class CaptchaConfig {
 
+    /**
+     * CAPTCHA configuration properties injected from application settings.
+     */
     @Autowired
     private CaptchaProperties captchaProperties;
 
     /**
-     * 验证码文字生成器
+     * Bean for CAPTCHA code generator.
+     * <p>
+     * Creates a code generator based on the configured type and length. Supports
+     * arithmetic (math) and random string types.
      *
-     * @return CodeGenerator
+     * @return the configured {@link CodeGenerator}
+     * @throws IllegalArgumentException if the code type is invalid
      */
     @Bean
     public CodeGenerator codeGenerator() {
@@ -42,7 +55,12 @@ public class CaptchaConfig {
     }
 
     /**
-     * 验证码字体
+     * Bean for CAPTCHA font configuration.
+     * <p>
+     * Creates a {@link Font} instance based on the configured font name, style, and
+     * size.
+     *
+     * @return the configured {@link Font}
      */
     @Bean
     public Font captchaFont() {
@@ -51,6 +69,5 @@ public class CaptchaConfig {
         int fontWight = captchaProperties.getFont().getWeight();
         return new Font(fontName, fontWight, fontSize);
     }
-
 
 }

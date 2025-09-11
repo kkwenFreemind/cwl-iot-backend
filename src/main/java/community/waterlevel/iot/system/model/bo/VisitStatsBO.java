@@ -7,22 +7,26 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 /**
- * 访问量统计业务对象
+ * VisitStatsBO is a business object representing visit statistics for the
+ * system.
+ * <p>
+ * This class encapsulates today's visit count, total visit count, and the page
+ * view growth rate, used for analytics and reporting in the IoT backend.
  *
  * @author Ray.Hao
  * @since 2024/7/2
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Getter
 @Setter
 public class VisitStatsBO {
 
-    @Schema(description = "今日访问量 (PV)")
     private Integer todayCount;
 
-    @Schema(description = "累计访问量 ")
     private Integer totalCount;
 
-    @Schema(description = "页面访问量增长率")
     private BigDecimal growthRate;
 
 }

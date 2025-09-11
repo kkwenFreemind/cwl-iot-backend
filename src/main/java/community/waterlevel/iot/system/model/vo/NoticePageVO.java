@@ -10,52 +10,62 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 通知公告视图对象
+ * View object representing a paginated notice/announcement record for API
+ * responses.
+ * <p>
+ * Encapsulates notice ID, title, status, type, publisher, level, publish time,
+ * read status, target type, and timestamps.
+ * Used to transfer paginated notice data from the backend to the client in
+ * notice management features.
+ * </p>
  *
  * @author youlaitech
  * @since 2024-08-27 10:31
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Getter
 @Setter
-@Schema(description = "通知公告视图对象")
+@Schema(description = "NoticePage VO")
 public class NoticePageVO implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "通知ID")
+    @Schema(description = "id")
     private Long id;
 
-    @Schema(description = "通知标题")
+    @Schema(description = "title")
     private String title;
 
-    @Schema(description = "通知状态")
+    @Schema(description = "publishStatus")
     private Integer publishStatus;
 
-    @Schema(description = "通知类型")
+    @Schema(description = "type")
     private Integer type;
 
-    @Schema(description = "发布人姓名")
+    @Schema(description = "publisherName")
     private String publisherName;
 
-    @Schema(description = "通知等级")
+    @Schema(description = "level")
     private String level;
 
-    @Schema(description = "发布时间")
+    @Schema(description = "publish Time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime publishTime;
 
-    @Schema(description = "是否已读")
+    @Schema(description = "isRead")
     private Integer isRead;
 
-    @Schema(description = "目标类型")
+    @Schema(description = "targetType")
     private Integer targetType;
 
-    @Schema(description = "创建时间")
+    @Schema(description = "create Time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime createTime;
 
-    @Schema(description = "撤回时间")
+    @Schema(description = "revoke Time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime revokeTime;
 }

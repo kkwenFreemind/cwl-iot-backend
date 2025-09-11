@@ -5,21 +5,32 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
- * 修改手机表单
+ * Mobile phone update form object for user contact modification operations.
+ * Handles secure mobile number changes with verification code validation
+ * to ensure account security and prevent unauthorized contact information modifications.
  *
  * @author Ray.Hao
  * @since 2024/8/19
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
-@Schema(description = "修改手机表单")
+@Schema(description = "MobileUpdate Form")
 @Data
 public class MobileUpdateForm {
-
-    @Schema(description = "手机号码")
-    @NotBlank(message = "手机号码不能为空")
+  /**
+     * New mobile phone number for account update.
+     * The target mobile number that will replace the current user's mobile contact.
+     */
+    @Schema(description = "mobile")
+    @NotBlank(message = "mobile Not Blank")
     private String mobile;
 
-    @Schema(description = "验证码")
-    @NotBlank(message = "验证码不能为空")
+    /**
+     * Verification code for mobile change security.
+     * Validation code sent to the new mobile number to confirm ownership.
+     */
+    @Schema(description = "Verification code")
+    @NotBlank(message = "Verification code NotBlank")
     private String code;
-
 }

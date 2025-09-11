@@ -5,23 +5,29 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 字典项键值对象
+ * Value object representing a dictionary item's value, label, and tag type for API responses.
+ * <p>
+ * Used to transfer dictionary item options from the backend to the client, typically for dropdowns or selection lists.
+ * </p>
  *
  * @author Ray.Hao
  * @since 0.0.1
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
-@Schema(description = "字典项键值对象")
+@Schema(description = "DictItemOption VO")
 @Getter
 @Setter
 public class DictItemOptionVO {
 
-    @Schema(description = "字典项值")
+    @Schema(description = "value")
     private String value;
 
-    @Schema(description = "字典项标签")
+    @Schema(description = "label")
     private String label;
 
-    @Schema(description = "标签类型")
+    @Schema(description = "tagType")
     private String tagType;
 
 }

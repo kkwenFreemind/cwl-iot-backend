@@ -5,58 +5,61 @@ import lombok.Data;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Pattern;
 import org.hibernate.validator.constraints.Range;
 
 import java.util.List;
 
 /**
- * 用户表单对象
+ * User form object for comprehensive user account management.
+ * Handles user creation and updates with validation support for profile
+ * information,
+ * organizational assignment, and role-based access control configuration.
  *
  * @author haoxr
  * @since 2022/4/12 11:04
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
-@Schema(description = "用户表单对象")
+@Schema(description = "User Form")
 @Data
 public class UserForm {
 
-    @Schema(description="用户ID")
+    @Schema(description = "User ID")
     private Long id;
 
-    @Schema(description="用户名")
-    @NotBlank(message = "用户名不能为空")
+    @Schema(description = "username")
+    @NotBlank(message = "Username cannot be empty")
     private String username;
 
-    @Schema(description="昵称")
-    @NotBlank(message = "昵称不能为空")
+    @Schema(description = "nickname")
+    @NotBlank(message = "Nickname cannot be empty")
     private String nickname;
 
-
-    @Schema(description="手机号码")
-    @Pattern(regexp = "^$|^1(3\\d|4[5-9]|5[0-35-9]|6[2567]|7[0-8]|8\\d|9[0-35-9])\\d{8}$", message = "手机号码格式不正确")
+    @Schema(description = "mobile")
     private String mobile;
 
-    @Schema(description="性别")
+    @Schema(description = "gender")
     private Integer gender;
 
-    @Schema(description="用户头像")
+    @Schema(description = "ser Avatar")
     private String avatar;
 
-    @Schema(description="邮箱")
+    @Schema(description = "email")
     private String email;
 
-    @Schema(description="用户状态(1:正常;0:禁用)")
-    @Range(min = 0, max = 1, message = "用户状态不正确")
+    @Schema(description = "User status (1: normal; 0: disabled)")
+    @Range(min = 0, max = 1, message = "Incorrect user status")
     private Integer status;
 
-    @Schema(description="部门ID")
+    @Schema(description = "deptId")
     private Long deptId;
 
-    @Schema(description="角色ID集合")
-    @NotEmpty(message = "用户角色不能为空")
+    @Schema(description = "Role ID collection")
+    @NotEmpty(message = "User role cannot be empty")
     private List<Long> roleIds;
 
-    @Schema(description="微信openId")
+    @Schema(description = "openId")
     private String openId;
 
 }

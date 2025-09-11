@@ -5,20 +5,31 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * 验证码信息
+ * Captcha information for verification process.
+ * Contains the captcha key and the Base64-encoded image string.
  *
  * @author Ray。Hao
  * @since 2023/03/24
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
+ * 
  */
-@Schema(description = "验证码信息")
+@Schema(description = "Verification code information")
 @Data
 @Builder
 public class CaptchaInfo {
 
-    @Schema(description = "验证码缓存 Key")
+    /**
+     * The cache key for the verification code.
+     */
+    @Schema(description = "Verification code cache Key")
     private String captchaKey;
 
-    @Schema(description = "验证码图片Base64字符串")
+    /**
+     * The Base64-encoded string of the verification code image.
+     */
+    @Schema(description = "Verification code image Base64 string")
     private String captchaBase64;
 
 }

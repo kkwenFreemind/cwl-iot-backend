@@ -5,71 +5,89 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 通知公告业务对象
+ * NoticeBO is a business object representing a system notice or announcement.
+ * <p>
+ * This class encapsulates the core business data for notices, including title, type, content, publisher, level, target type, publish status, and relevant timestamps.
+ * Used for transferring notice data between service and presentation layers in the IoT backend.
  *
  * @author Theo
  * @since 2024-09-01 10:31
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Data
 public class NoticeBO {
 
     /**
-     * 通知ID
+     * Unique notice identifier for database reference.
+     * Primary key used for notice retrieval and management operations.
      */
     private Long id;
 
     /**
-     * 通知标题
+     * Notice title for display and identification.
+     * Brief, descriptive heading summarizing the notification content.
      */
     private String title;
 
     /**
-     * 通知类型
+     * Notice type classification code.
+     * Numeric identifier categorizing the type of notification.
      */
     private Integer type;
 
     /**
-     * 通知类型标签
+     * Human-readable notice type description.
+     * Localized label corresponding to the type code for UI display.
      */
     private String typeLabel;
 
     /**
-     * 通知内容
+     * Full notification content body.
+     * Detailed message text for the announcement or notification.
      */
     private String content;
 
     /**
-     * 发布人姓名
+     * Publisher's display name for attribution.
+     * Human-readable name of the user who created this notice.
      */
     private String publisherName;
 
     /**
-     * 通知等级（L: 低, M: 中, H: 高）
+     * Priority level indicator for importance classification.
+     * L = Low priority, M = Medium priority, H = High priority
      */
     private String level;
 
     /**
-     * 目标类型(1: 全体 2: 指定)
+     * Target audience scope for delivery control.
+     * 1 = All users (broadcast), 2 = Specific users (targeted delivery)
      */
     private Integer targetType;
 
     /**
-     * 发布状态（0: 未发布, 1: 已发布, -1: 已撤回）
+     * Current publication status of the notice.
+     * 0 = Unpublished (draft), 1 = Published (active), -1 = Revoked (withdrawn)
      */
     private Integer publishStatus;
 
     /**
-     * 创建时间
+     * Notice creation timestamp for audit tracking.
+     * Records when the notice was initially created in the system.
      */
     private LocalDateTime createTime;
 
     /**
-     * 发布时间
+     * Publication timestamp for lifecycle tracking.
+     * Records when the notice was made available to users.
      */
     private LocalDateTime publishTime;
 
     /**
-     * 撤回时间
+     * Revocation timestamp for withdrawal tracking.
+     * Records when a published notice was withdrawn from public view.
      */
     private LocalDateTime revokeTime;
 }

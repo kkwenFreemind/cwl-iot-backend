@@ -17,28 +17,54 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Token 认证校验过滤器
+ * Servlet filter for validating and processing authentication tokens.
+ * Checks the validity of Bearer tokens in HTTP requests, sets the authentication context for valid tokens,
+ * and blocks requests with invalid or expired tokens.
+ * Ensures secure, stateless authentication for protected endpoints.
  *
  * @author wangtao
  * @since 2025/3/6 16:50
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
     /**
-     * Token 管理器
+     * Token manager for validating and parsing authentication tokens.
      */
     private final TokenManager tokenManager;
 
+    /**
+     * Constructs a new {@code TokenAuthenticationFilter} with the given token
+     * manager.
+     *
+     * @param tokenManager the token manager for token validation and parsing
+     */
     public TokenAuthenticationFilter(TokenManager tokenManager) {
         this.tokenManager = tokenManager;
     }
 
     /**
-     * 校验 Token ，包括验签和是否过期
-     * 如果 Token 有效，将 Token 解析为 Authentication 对象，并设置到 Spring Security 上下文中
+     * Validates the Bearer token in the Authorization header, including signature
+     * and expiration checks.
+     * <p>
+     * If the token is valid, it is parsed into an
+     * {@link org.springframework.security.core.Authentication} object
+     * and set in the Spring Security context. If the token is invalid or an error
+     * occurs, an error response is returned
+     * and the security context is cleared. Otherwise, the filter chain continues.
+     * </p>
+     *
+     * @param request     the HTTP servlet request
+     * @param response    the HTTP servlet response
+     * @param filterChain the filter chain
+     * @throws ServletException if a servlet error occurs
+     * @throws IOException      if an I/O error occurs
      */
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
@@ -46,28 +72,29 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
             if (StrUtil.isNotBlank(authorizationHeader)
                     && authorizationHeader.startsWith(SecurityConstants.BEARER_TOKEN_PREFIX)) {
 
-                // 剥离Bearer前缀获取原始令牌
+                // Remove Bearer prefix to get the raw token
                 String rawToken = authorizationHeader.substring(SecurityConstants.BEARER_TOKEN_PREFIX.length());
 
-                // 执行令牌有效性检查（包含密码学验签和过期时间验证）
+                // Validate the token (signature and expiration)
                 boolean isValidToken = tokenManager.validateToken(rawToken);
                 if (!isValidToken) {
                     ResponseUtils.writeErrMsg(response, ResultCode.ACCESS_TOKEN_INVALID);
                     return;
                 }
 
-                // 将令牌解析为 Spring Security 上下文认证对象
+                // Parse the token into a Spring Security Authentication object
                 Authentication authentication = tokenManager.parseToken(rawToken);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception ex) {
-            // 安全上下文清除保障（防止上下文残留）
+            // Ensure security context is cleared to prevent context residue
             SecurityContextHolder.clearContext();
             ResponseUtils.writeErrMsg(response, ResultCode.ACCESS_TOKEN_INVALID);
             return;
         }
 
-        // 继续后续过滤器链执行
+        // Continue with the filter chain
         filterChain.doFilter(request, response);
     }
 }
+

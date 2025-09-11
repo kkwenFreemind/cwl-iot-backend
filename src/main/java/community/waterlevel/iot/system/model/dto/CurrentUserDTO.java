@@ -6,31 +6,38 @@ import lombok.Data;
 import java.util.Set;
 
 /**
- * 当前登录用户对象
+ * CurrentUserDTO is a data transfer object representing the currently logged-in
+ * user.
+ * <p>
+ * This class encapsulates user identity, profile, roles, and permissions, and
+ * is used for authentication and authorization context in the IoT backend.
  *
  * @author haoxr
  * @since 2022/1/14
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
-@Schema(description ="当前登录用户对象")
+@Schema(description = "The currently logged-in user object")
 @Data
 public class CurrentUserDTO {
 
-    @Schema(description="用户ID")
+    @Schema(description = "userId")
     private Long userId;
 
-    @Schema(description="用户名")
+    @Schema(description = "username")
     private String username;
 
-    @Schema(description="用户昵称")
+    @Schema(description = "nickname")
     private String nickname;
 
-    @Schema(description="头像地址")
+    @Schema(description = "avatar")
     private String avatar;
 
-    @Schema(description="用户角色编码集合")
+    @Schema(description = "User role encoding collection")
     private Set<String> roles;
 
-    @Schema(description="用户权限标识集合")
+    @Schema(description = "User permission identifier collection")
     private Set<String> perms;
 
 }

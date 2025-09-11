@@ -12,43 +12,49 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 通知公告表单对象
+ * Notice announcement form object for notification management operations.
+ * Handles notice creation and updates with comprehensive content validation,
+ * targeting options, and priority settings for effective communication
+ * management.
  *
  * @author youlaitech
  * @since 2024-08-27 10:31
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Getter
 @Setter
-@Schema(description = "通知公告表单对象")
+@Schema(description = "Notice Form")
 public class NoticeForm implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "通知ID")
+    @Schema(description = "Notice ID")
     private Long id;
 
-    @Schema(description = "通知标题")
-    @NotBlank(message = "通知标题不能为空")
-    @Size(max=50, message="通知标题长度不能超过50个字符")
+    @Schema(description = "Notice Title")
+    @NotBlank(message = "Notification title cannot be empty")
+    @Size(max = 50, message = "The notification title cannot exceed 50 characters.")
     private String title;
 
-    @Schema(description = "通知内容")
-    @NotBlank(message = "通知内容不能为空")
-    @Size(max=65535, message="通知内容长度不能超过65535个字符")
+    @Schema(description = "Notification content")
+    @NotBlank(message = "Notification content cannot be empty")
+    @Size(max = 65535, message = "The notification content length cannot exceed 65535 characters")
     private String content;
 
-    @Schema(description = "通知类型")
+    @Schema(description = "Notification Type")
     private Integer type;
 
-    @Schema(description = "优先级(L-低 M-中 H-高)")
+    @Schema(description = "Priority (L-Low M-Medium H-High)")
     private String level;
 
-    @Schema(description = "目标类型(1-全体 2-指定)")
-    @Range(min = 1, max = 2, message = "目标类型取值范围[1,2]")
+    @Schema(description = "Target type (1-all 2-specific)")
+    @Range(min = 1, max = 2, message = "Target type value range[1,2]")
     private Integer targetType;
 
-    @Schema(description = "接收人ID集合")
+    @Schema(description = "Recipient ID collection")
     private List<String> targetUserIds;
 
 }

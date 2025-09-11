@@ -1,30 +1,32 @@
 package community.waterlevel.iot.auth.controller;
 
+import community.waterlevel.iot.auth.model.CaptchaInfo;
+import community.waterlevel.iot.common.enums.LogModuleEnum;
+import community.waterlevel.iot.common.result.Result;
+import community.waterlevel.iot.auth.service.AuthService;
+import community.waterlevel.iot.core.security.model.AuthenticationToken;
+import community.waterlevel.iot.common.annotation.Log;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import community.waterlevel.iot.auth.model.CaptchaInfo;
-import community.waterlevel.iot.auth.model.dto.WxMiniAppCodeLoginDTO;
-import community.waterlevel.iot.auth.model.dto.WxMiniAppPhoneLoginDTO;
-import community.waterlevel.iot.auth.service.AuthService;
-import community.waterlevel.iot.common.annotation.Log;
-import community.waterlevel.iot.common.enums.LogModuleEnum;
-import community.waterlevel.iot.common.result.Result;
-import community.waterlevel.iot.core.security.model.AuthenticationToken;
-
 
 /**
- * 认证控制层
+ * Authentication controller for Community Water Level IoT System.
+ * Provides REST APIs for user authentication, login, logout and token
+ * management.
  *
  * @author Ray.Hao
  * @since 2022/10/16
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
+ * 
  */
-@Tag(name = "01.认证中心")
+@Tag(name = "01. Authentication Center")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -33,82 +35,62 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Operation(summary = "获取验证码")
+    /**
+     * Get captcha verification code for authentication.
+     *
+     * @return Result containing captcha information
+     * @since 1.0.0
+     */
+    @Operation(summary = "Get verification code")
     @GetMapping("/captcha")
     public Result<CaptchaInfo> getCaptcha() {
         CaptchaInfo captcha = authService.getCaptcha();
         return Result.success(captcha);
     }
 
-    @Operation(summary = "账号密码登录")
+    /**
+     * Authenticate user with username and password.
+     *
+     * @param username the username for authentication
+     * @param password the password for authentication
+     * @return Result containing JWT authentication token
+     * @since 1.0.0
+     */
+    @Operation(summary = "Login with username and password")
     @PostMapping("/login")
-    @Log(value = "登录", module = LogModuleEnum.LOGIN)
+    @Log(value = "Login", module = LogModuleEnum.LOGIN)
     public Result<AuthenticationToken> login(
-            @Parameter(description = "用户名", example = "admin") @RequestParam String username,
-            @Parameter(description = "密码", example = "123456") @RequestParam String password
-    ) {
+            @Parameter(description = "username", example = "admin") @RequestParam String username,
+            @Parameter(description = "password", example = "123456") @RequestParam String password) {
         AuthenticationToken authenticationToken = authService.login(username, password);
         return Result.success(authenticationToken);
     }
 
-    @Operation(summary = "短信验证码登录")
-    @PostMapping("/login/sms")
-    @Log(value = "短信验证码登录", module = LogModuleEnum.LOGIN)
-    public Result<AuthenticationToken> loginBySms(
-            @Parameter(description = "手机号", example = "18812345678") @RequestParam String mobile,
-            @Parameter(description = "验证码", example = "1234") @RequestParam String code
-    ) {
-        AuthenticationToken loginResult = authService.loginBySms(mobile, code);
-        return Result.success(loginResult);
-    }
-
-    @Operation(summary = "发送登录短信验证码")
-    @PostMapping("/sms/code")
-    public Result<Void> sendLoginVerifyCode(
-            @Parameter(description = "手机号", example = "18812345678") @RequestParam String mobile
-    ) {
-        authService.sendSmsLoginCode(mobile);
-        return Result.success();
-    }
-
-    @Operation(summary = "微信授权登录(Web)")
-    @PostMapping("/login/wechat")
-    @Log(value = "微信登录", module = LogModuleEnum.LOGIN)
-    public Result<AuthenticationToken> loginByWechat(
-            @Parameter(description = "微信授权码", example = "code") @RequestParam String code
-    ) {
-        AuthenticationToken loginResult = authService.loginByWechat(code);
-        return Result.success(loginResult);
-    }
-
-    @Operation(summary = "微信小程序登录(Code)")
-    @PostMapping("/wx/miniapp/code-login")
-    public Result<AuthenticationToken> loginByWxMiniAppCode(@RequestBody @Valid WxMiniAppCodeLoginDTO loginDTO) {
-        AuthenticationToken token = authService.loginByWxMiniAppCode(loginDTO);
-        return Result.success(token);
-    }
-
-    @Operation(summary = "微信小程序登录(手机号)")
-    @PostMapping("/wx/miniapp/phone-login")
-    public Result<AuthenticationToken> loginByWxMiniAppPhone(@RequestBody @Valid WxMiniAppPhoneLoginDTO loginDTO) {
-        AuthenticationToken token = authService.loginByWxMiniAppPhone(loginDTO);
-        return Result.success(token);
-    }
-
-
-    @Operation(summary = "退出登录")
+    /**
+     * Log out current user and invalidate session.
+     *
+     * @return Result indicating logout success
+     * @since 1.0.0
+     */
+    @Operation(summary = "Log out")
     @DeleteMapping("/logout")
-    @Log(value = "退出登录", module = LogModuleEnum.LOGIN)
+    @Log(value = "Log out", module = LogModuleEnum.LOGIN)
     public Result<?> logout() {
         authService.logout();
         return Result.success();
     }
 
-    @Operation(summary = "刷新令牌")
+    /**
+     * Refresh JWT authentication token using refresh token.
+     *
+     * @param refreshToken the refresh token for generating new access token
+     * @return Result containing new authentication token
+     * @since 1.0.0
+     */
+    @Operation(summary = "Refresh Token")
     @PostMapping("/refresh-token")
     public Result<?> refreshToken(
-            @Parameter(description = "刷新令牌", example = "xxx.xxx.xxx") @RequestParam String refreshToken
-    ) {
+            @Parameter(description = "Refresh Token", example = "xxx.xxx.xxx") @RequestParam String refreshToken) {
         AuthenticationToken authenticationToken = authService.refreshToken(refreshToken);
         return Result.success(authenticationToken);
     }

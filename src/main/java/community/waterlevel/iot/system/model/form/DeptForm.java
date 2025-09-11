@@ -6,29 +6,68 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.validator.constraints.Range;
 
-@Schema(description = "部门表单对象")
+/**
+ * Form object representing department data for create and update operations.
+ * <p>
+ * Encapsulates department name, code, parent ID, status, and sort order. Used
+ * for data transfer
+ * between client and server in department management features.
+ * </p>
+ * 
+ * @author youlai
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
+ */
+@Schema(description = "Department form object")
 @Getter
 @Setter
 public class DeptForm {
 
-    @Schema(description="部门ID", example = "1001")
+    /**
+     * Department primary key identifier for updates.
+     * Used for modifying existing departments, null for new department creation.
+     */
+    @Schema(description = "ID", example = "1001")
     private Long id;
 
-    @Schema(description="部门名称", example = "研发部")
+    /**
+     * Department display name for organizational identification.
+     * Human-readable name shown throughout the application and organizational
+     * charts.
+     */
+    @Schema(description = "Dept Name")
     private String name;
 
-    @Schema(description="部门编号", example = "RD001")
+    /**
+     * Unique department code for system identification.
+     * Alphanumeric identifier used for programmatic department reference and
+     * integration.
+     */
+    @Schema(description = "Dept Code")
     private String code;
 
-    @Schema(description="父部门ID", example = "1000")
-    @NotNull(message = "父部门ID不能为空")
+    /**
+     * Parent department identifier for hierarchical structure.
+     * Links this department to its parent in the organizational tree structure.
+     */
+    @Schema(description = "parentId")
+    @NotNull(message = "NotNull")
     private Long parentId;
 
-    @Schema(description="状态(1:启用;0:禁用)", example = "1")
-    @Range(min = 0, max = 1, message = "状态值不正确")
+    /**
+     * Department activation status for operational control.
+     * 1 = Active (department operational), 0 = Disabled (department inactive)
+     */
+    @Schema(description = "Status (1: enabled; 0: disabled)", example = "1")
+    @Range(min = 0, max = 1, message = "Incorrect status value")
     private Integer status;
 
-    @Schema(description="排序(数字越小排名越靠前)", example = "1")
+    /**
+     * Display order for department listing and hierarchy.
+     * Lower values appear first in department lists and organizational displays.
+     */
+    @Schema(description = "Sort", example = "1")
     private Integer sort;
 
 }

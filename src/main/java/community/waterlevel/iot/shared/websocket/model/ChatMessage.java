@@ -5,7 +5,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 系统消息体
+ * ChatMessage is a data model representing a message exchanged via WebSocket in
+ * the system.
+ * <p>
+ * It contains the sender's identifier and the message content, and is used for
+ * real-time communication between users or system notifications.
  */
 @Data
 @AllArgsConstructor
@@ -13,13 +17,14 @@ import lombok.NoArgsConstructor;
 public class ChatMessage {
 
     /**
-     * 发送者
+     * The sender of the message
      */
     private String sender;
 
     /**
-     * 消息内容
+     * The content of the message
      */
     private String content;
 
 }
+

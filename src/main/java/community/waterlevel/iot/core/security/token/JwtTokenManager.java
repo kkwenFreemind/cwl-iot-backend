@@ -16,12 +16,10 @@ import community.waterlevel.iot.common.result.ResultCode;
 import community.waterlevel.iot.config.property.SecurityProperties;
 import community.waterlevel.iot.core.security.model.AuthenticationToken;
 import community.waterlevel.iot.core.security.model.SysUserDetails;
-
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
@@ -33,21 +31,49 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * JWT Token 管理器
+ * JWT Token Manager responsible for handling all JWT-related operations in the
+ * security module.
  * <p>
- * 用于生成、解析、校验、刷新 JWT Token
+ * This service provides functionality to generate, parse, validate, refresh,
+ * and invalidate JWT tokens for authentication and authorization.
+ * It also manages token blacklisting (e.g., for logout or password change
+ * scenarios) and supports both access and refresh tokens.
+ * <p>
+ * The manager integrates with Redis for token blacklisting and uses
+ * configurable security properties for token settings.
  *
  * @author Ray.Hao
  * @since 2024/11/15
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @ConditionalOnProperty(value = "security.session.type", havingValue = "jwt")
 @Service
 public class JwtTokenManager implements TokenManager {
 
+    /**
+     * Security properties for token configuration.
+     */
     private final SecurityProperties securityProperties;
+
+    /**
+     * Redis template for token blacklisting and cache operations.
+     */
     private final RedisTemplate<String, Object> redisTemplate;
+
+    /**
+     * Secret key for signing and validating JWT tokens.
+     */
     private final byte[] secretKey;
 
+    /**
+     * Constructs a new {@code JwtTokenManager} with the given security properties
+     * and Redis template.
+     *
+     * @param securityProperties the security properties for token configuration
+     * @param redisTemplate      the Redis template for token cache and blacklist
+     */
     public JwtTokenManager(SecurityProperties securityProperties, RedisTemplate<String, Object> redisTemplate) {
         this.securityProperties = securityProperties;
         this.redisTemplate = redisTemplate;
@@ -55,10 +81,10 @@ public class JwtTokenManager implements TokenManager {
     }
 
     /**
-     * 生成令牌
+     * Generates a new access and refresh token pair for the given authentication.
      *
-     * @param authentication 认证信息
-     * @return 令牌响应对象
+     * @param authentication the authentication information
+     * @return the authentication token response object
      */
     @Override
     public AuthenticationToken generateToken(Authentication authentication) {
@@ -77,10 +103,11 @@ public class JwtTokenManager implements TokenManager {
     }
 
     /**
-     * 解析令牌
+     * Parses the JWT token and returns the corresponding {@link Authentication}
+     * object.
      *
-     * @param token JWT Token
-     * @return Authentication 对象
+     * @param token the JWT token string
+     * @return the authentication object parsed from the token
      */
     @Override
     public Authentication parseToken(String token) {
@@ -93,77 +120,77 @@ public class JwtTokenManager implements TokenManager {
         userDetails.setDataScope(payloads.getInt(JwtClaimConstants.DATA_SCOPE)); // 数据权限范围
 
         userDetails.setUsername(payloads.getStr(JWTPayload.SUBJECT)); // 用户名
-        // 角色集合
+
         Set<SimpleGrantedAuthority> authorities = payloads.getJSONArray(JwtClaimConstants.AUTHORITIES)
                 .stream()
-                .map(authority -> new SimpleGrantedAuthority(Convert.toStr(authority)))
+                .map(authority -> {
+                    String authorityStr = Convert.toStr(authority);
+                    System.out.println("Processing permissions: " + authority + " -> " + authorityStr);
+                    return new SimpleGrantedAuthority(authorityStr);
+                })
                 .collect(Collectors.toSet());
-
         return new UsernamePasswordAuthenticationToken(userDetails, "", authorities);
     }
 
     /**
-     * 校验令牌
+     * Validates the given JWT access token.
      *
-     * @param token JWT Token
-     * @return 是否有效
+     * @param token the JWT token string
+     * @return {@code true} if the token is valid; {@code false} otherwise
      */
     @Override
     public boolean validateToken(String token) {
-        return validateToken(token,false);
+        return validateToken(token, false);
     }
 
     /**
-     * 校验刷新令牌
+     * Validates the given JWT refresh token.
      *
-     * @param refreshToken JWT Token
-     * @return 验证结果
+     * @param refreshToken the JWT refresh token string
+     * @return {@code true} if the refresh token is valid; {@code false} otherwise
      */
     @Override
     public boolean validateRefreshToken(String refreshToken) {
-        return validateToken(refreshToken,true);
+        return validateToken(refreshToken, true);
     }
 
     /**
-     * 校验令牌
+     * Validates the given JWT token, optionally as a refresh token.
      *
-     * @param token                JWT Token
-     * @param validateRefreshToken 是否校验刷新令牌
-     * @return 是否有效
+     * @param token                the JWT token string
+     * @param validateRefreshToken whether to validate as a refresh token
+     * @return {@code true} if the token is valid; {@code false} otherwise
      */
     private boolean validateToken(String token, boolean validateRefreshToken) {
         try {
             JWT jwt = JWTUtil.parseToken(token);
-            // 检查 Token 是否有效(验签 + 是否过期)
             boolean isValid = jwt.setKey(secretKey).validate(0);
 
             if (isValid) {
-                // 检查 Token 是否已被加入黑名单(注销、修改密码等场景)
                 JSONObject payloads = jwt.getPayloads();
                 String jti = payloads.getStr(JWTPayload.JWT_ID);
-                if(validateRefreshToken) {
-                    //刷新token需要校验token类别
+                if (validateRefreshToken) {
                     boolean isRefreshToken = payloads.getBool(JwtClaimConstants.TOKEN_TYPE);
                     if (!isRefreshToken) {
                         return false;
                     }
                 }
-                // 判断是否在黑名单中，如果在，则返回 false 标识Token无效
-                if (Boolean.TRUE.equals(redisTemplate.hasKey(StrUtil.format(RedisConstants.Auth.BLACKLIST_TOKEN, jti)))) {
+                if (Boolean.TRUE
+                        .equals(redisTemplate.hasKey(StrUtil.format(RedisConstants.Auth.BLACKLIST_TOKEN, jti)))) {
                     return false;
                 }
             }
             return isValid;
         } catch (Exception gitignore) {
-            // token 验证
+
         }
         return false;
     }
 
     /**
-     * 将令牌加入黑名单
+     * Adds the given JWT token to the blacklist, making it invalid for future use.
      *
-     * @param token JWT Token
+     * @param token the JWT token string
      */
     @Override
     public void invalidateToken(String token) {
@@ -173,30 +200,28 @@ public class JwtTokenManager implements TokenManager {
         JWT jwt = JWTUtil.parseToken(token);
         JSONObject payloads = jwt.getPayloads();
         Integer expirationAt = payloads.getInt(JWTPayload.EXPIRES_AT);
-        // 黑名单Token Key
-        String blacklistTokenKey = StrUtil.format(RedisConstants.Auth.BLACKLIST_TOKEN, payloads.getStr(JWTPayload.JWT_ID));
+
+        String blacklistTokenKey = StrUtil.format(RedisConstants.Auth.BLACKLIST_TOKEN,
+                payloads.getStr(JWTPayload.JWT_ID));
 
         if (expirationAt != null) {
             int currentTimeSeconds = Convert.toInt(System.currentTimeMillis() / 1000);
             if (expirationAt < currentTimeSeconds) {
-                // Token已过期，直接返回
                 return;
             }
-            // 计算Token剩余时间，将其加入黑名单
             int expirationIn = expirationAt - currentTimeSeconds;
             redisTemplate.opsForValue().set(blacklistTokenKey, null, expirationIn, TimeUnit.SECONDS);
         } else {
-            // 永不过期的Token永久加入黑名单
             redisTemplate.opsForValue().set(blacklistTokenKey, null);
         }
         ;
     }
 
     /**
-     * 刷新令牌
+     * Refreshes the access token using the given refresh token.
      *
-     * @param refreshToken 刷新令牌
-     * @return 令牌响应对象
+     * @param refreshToken the refresh token string
+     * @return the new authentication token response object
      */
     @Override
     public AuthenticationToken refreshToken(String refreshToken) {
@@ -216,36 +241,41 @@ public class JwtTokenManager implements TokenManager {
     }
 
     /**
-     * 生成 JWT Token
+     * Generates a JWT access token for the given authentication and time-to-live.
      *
-     * @param authentication 认证信息
-     * @param ttl            过期时间
-     * @return JWT Token
+     * @param authentication the authentication information
+     * @param ttl            the token time-to-live in seconds
+     * @return the generated JWT token string
      */
     private String generateToken(Authentication authentication, int ttl) {
         return generateToken(authentication, ttl, false);
     }
 
-
     /**
-     * 生成 JWT Token
+     * Generates a JWT token (access or refresh) for the given authentication and
+     * time-to-live.
      *
-     * @param authentication 认证信息
-     * @param ttl            过期时间
-     * @param isRefreshToken 类型是否为刷新token
-     * @return JWT Token
+     * @param authentication the authentication information
+     * @param ttl            the token time-to-live in seconds
+     * @param isRefreshToken whether the token is a refresh token
+     * @return the generated JWT token string
      */
     private String generateToken(Authentication authentication, int ttl, boolean isRefreshToken) {
         SysUserDetails userDetails = (SysUserDetails) authentication.getPrincipal();
         Map<String, Object> payload = new HashMap<>();
-        payload.put(JwtClaimConstants.USER_ID, userDetails.getUserId()); // 用户ID
-        payload.put(JwtClaimConstants.DEPT_ID, userDetails.getDeptId()); // 部门ID
-        payload.put(JwtClaimConstants.DATA_SCOPE, userDetails.getDataScope()); // 数据权限范围
+        payload.put(JwtClaimConstants.USER_ID, userDetails.getUserId());
+        payload.put(JwtClaimConstants.DEPT_ID, userDetails.getDeptId());
+        payload.put(JwtClaimConstants.DATA_SCOPE, userDetails.getDataScope());
 
-        // claims 中添加角色信息
         Set<String> roles = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
+                .map(authority -> {
+                    String authorityStr = authority.getAuthority();
+                    System.out.println(
+                            "Handling permissions when generating a token: " + authority + " -> " + authorityStr);
+                    return authorityStr;
+                })
                 .collect(Collectors.toSet());
+
         payload.put(JwtClaimConstants.AUTHORITIES, roles);
 
         Date now = new Date();
@@ -255,7 +285,6 @@ public class JwtTokenManager implements TokenManager {
             payload.put(JwtClaimConstants.TOKEN_TYPE, true);
         }
 
-        // 设置过期时间 -1 表示永不过期
         if (ttl != -1) {
             Date expiresAt = DateUtil.offsetSecond(now, ttl);
             payload.put(JWTPayload.EXPIRES_AT, expiresAt);

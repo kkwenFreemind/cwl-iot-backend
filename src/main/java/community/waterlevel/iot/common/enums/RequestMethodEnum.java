@@ -3,44 +3,63 @@ package community.waterlevel.iot.common.enums;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * Enumeration of HTTP request methods, corresponding to common RESTful API actions.
+ * Used to annotate or determine the request type (GET, POST, PUT, PATCH, DELETE, ALL)
+ * in controller layers. Primarily applied for logging, permission control, or
+ * identifying request methods in custom annotations.
+ *
+ * @author Ray
+ * @since 2.10.0
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
+ */
 @Getter
 @AllArgsConstructor
 public enum RequestMethodEnum {
+
     /**
-     * 搜寻 @AnonymousGetMapping
+     * HTTP GET method.
      */
     GET("GET"),
 
     /**
-     * 搜寻 @AnonymousPostMapping
+     * HTTP POST method.
      */
     POST("POST"),
 
     /**
-     * 搜寻 @AnonymousPutMapping
+     * HTTP PUT method.
      */
     PUT("PUT"),
 
     /**
-     * 搜寻 @AnonymousPatchMapping
+     * HTTP PATCH method.
      */
     PATCH("PATCH"),
 
     /**
-     * 搜寻 @AnonymousDeleteMapping
+     * HTTP DELETE method.
      */
     DELETE("DELETE"),
 
     /**
-     * 否则就是所有 Request 接口都放行
+     * Represents all HTTP methods (wildcard).
      */
     ALL("All");
 
     /**
-     * Request 类型
+     * String representation of the HTTP method.
      */
     private final String type;
 
+    /**
+     * Finds the corresponding RequestMethodEnum by string type.
+     *
+     * @param type the string representation of the HTTP method
+     * @return the matching RequestMethodEnum, or ALL if not found
+     */
     public static RequestMethodEnum find(String type) {
         for (RequestMethodEnum value : RequestMethodEnum.values()) {
             if (value.getType().equals(type)) {

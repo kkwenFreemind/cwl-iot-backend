@@ -5,26 +5,43 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * 认证令牌响应对象
+ * Response object for authentication tokens.
+ * Contains token type, access token, refresh token, and expiration time.
+ * Used as the standard response for successful authentication requests.
  *
  * @author Ray.Hao
  * @since 0.0.1
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
-@Schema(description = "认证令牌响应对象")
+@Schema(description = "Authentication token response object")
 @Data
 @Builder
 public class AuthenticationToken {
 
-    @Schema(description = "令牌类型", example = "Bearer")
+    /**
+     * The type of the token (e.g., "Bearer").
+     */
+    @Schema(description = "Token type", example = "Bearer")
     private String tokenType;
 
-    @Schema(description = "访问令牌")
+    /**
+     * The access token string issued to the client.
+     */
+    @Schema(description = "Access token")
     private String accessToken;
 
-    @Schema(description = "刷新令牌")
+    /**
+     * The refresh token string used to obtain new access tokens.
+     */
+    @Schema(description = "Refresh token")
     private String refreshToken;
 
-    @Schema(description = "过期时间(单位：秒)")
+    /**
+     * The expiration time of the access token, in seconds.
+     */
+    @Schema(description = "Expiration time (seconds)")
     private Integer expiresIn;
 
 }

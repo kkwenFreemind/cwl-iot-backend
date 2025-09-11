@@ -7,32 +7,63 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 /**
- * 访问量统计视图对象
+ * View object representing visit statistics for API responses.
+ * <p>
+ * Encapsulates today's and total unique visitor (UV) and page view (PV) counts, as well as growth rates.
+ * Used to transfer visit statistics data from the backend to the client in analytics features.
+ * </p>
+ *
+ * <p>
+ * This class is used to provide summary statistics for visits, including current day and total counts
+ * for unique visitors and page views, as well as their respective growth rates, typically for dashboard
+ * or analytics modules.
+ * </p>
  *
  * @author Ray.Hao
  * @since 2024/7/2
+ *
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
-@Schema(description = "访问量统计视图对象")
+@Schema(description = "VisitStats VO")
 @Getter
 @Setter
 public class VisitStatsVO {
 
-    @Schema(description = "今日独立访客数 (UV)")
+    /**
+     * The number of unique visitors (UV) for today.
+     */
+    @Schema(description = "todayUvCount (UV)")
     private Integer todayUvCount;
 
-    @Schema(description = "累计独立访客数 (UV)")
+    /**
+     * The total number of unique visitors (UV).
+     */
+    @Schema(description = "totalUvCount (UV)")
     private Integer totalUvCount;
 
-    @Schema(description = "独立访客增长率")
+    /**
+     * The growth rate of unique visitors (UV).
+     */
+    @Schema(description = "uvGrowthRate")
     private BigDecimal uvGrowthRate;
 
-    @Schema(description = "今日页面浏览量 (PV)")
+    /**
+     * The number of page views (PV) for today.
+     */
+    @Schema(description = "todayPvCount (PV)")
     private Integer todayPvCount;
 
-    @Schema(description = "累计页面浏览量 (PV)")
+    /**
+     * The total number of page views (PV).
+     */
+    @Schema(description = "totalPvCount (PV)")
     private Integer totalPvCount;
 
-    @Schema(description = "页面浏览量增长率")
+    /**
+     * The growth rate of page views (PV).
+     */
+    @Schema(description = "pvGrowthRate")
     private BigDecimal pvGrowthRate;
 
 }

@@ -1,25 +1,32 @@
 package community.waterlevel.iot.common.constant;
 
 /**
- * 安全模块常量
+ * Defines constant values for security-related configuration and conventions.
+ * Includes API endpoints, token prefixes, and authority naming standards
+ * used throughout the authentication and authorization modules.
  *
  * @author Ray.Hao
  * @since 2023/11/24
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 public interface SecurityConstants {
 
     /**
-     * 登录路径
+     * API path for user login endpoint.
      */
     String LOGIN_PATH = "/api/v1/auth/login";
 
     /**
-     * JWT Token 前缀
+     * Prefix for Bearer tokens in HTTP Authorization headers.
+     * Example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6..."
      */
-    String BEARER_TOKEN_PREFIX  = "Bearer ";
+    String BEARER_TOKEN_PREFIX = "Bearer ";
 
     /**
-     * 角色前缀，用于区分 authorities 角色和权限， ROLE_* 角色 、没有前缀的是权限
+     * Prefix for role authorities in Spring Security.
+     * Example: "ROLE_ADMIN"
      */
     String ROLE_PREFIX = "ROLE_";
 }

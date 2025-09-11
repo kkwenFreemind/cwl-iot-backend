@@ -7,10 +7,16 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * 视图对象基类
+ * Base class for view objects (VO) used in API responses or UI data transfer.
+ * Provides a common parent for all VO classes to ensure consistency and serialization support.
+
  *
  * @author haoxr
  * @since 2022/10/22
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
+ * 
  */
 @Data
 @ToString

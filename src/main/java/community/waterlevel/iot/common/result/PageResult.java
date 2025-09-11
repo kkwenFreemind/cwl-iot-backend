@@ -7,10 +7,18 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * 分页响应结构体
+ * Generic response structure for paginated API results.
+ * Contains response code, message, and a data object with the result list and
+ * total count.
+ * Used to standardize pagination responses across the application.
+ *
+ * @param <T> the type of records in the paginated result
  *
  * @author Ray
  * @since 2022/2/18
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Data
 public class PageResult<T> implements Serializable {
@@ -36,11 +44,7 @@ public class PageResult<T> implements Serializable {
 
     @lombok.Data
     public static class Data<T> {
-
         private List<T> list;
-
         private long total;
-
     }
-
 }

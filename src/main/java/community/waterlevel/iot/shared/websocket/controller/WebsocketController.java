@@ -14,12 +14,20 @@ import community.waterlevel.iot.shared.websocket.model.ChatMessage;
 import java.security.Principal;
 
 /**
- * WebSocket 测试用例控制层
+ * WebsocketController is a REST controller that provides endpoints for
+ * WebSocket messaging, supporting both broadcast and point-to-point
+ * communication.
  * <p>
- * 包含点对点/广播发送消息
+ * It exposes APIs for sending messages to all connected clients or to specific
+ * users, leveraging Spring's messaging infrastructure. This controller is
+ * useful for real-time notifications, chat, and other interactive features in
+ * the IoT backend.
  *
  * @author Ray.Hao
  * @since 2.3.0
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @RestController
 @RequestMapping("/websocket")
@@ -27,38 +35,41 @@ import java.security.Principal;
 @Slf4j
 public class WebsocketController {
 
+    /**
+     * SimpMessagingTemplate for sending WebSocket messages.
+     */
     private final SimpMessagingTemplate messagingTemplate;
 
-
     /**
-     * 广播发送消息
+     * Broadcasts a message to all connected clients.
      *
-     * @param message 消息内容
+     * @param message The message content to broadcast
+     * @return Notification message from the server
      */
     @MessageMapping("/sendToAll")
     @SendTo("/topic/notice")
     public String sendToAll(String message) {
-        return "服务端通知: " + message;
+        return "Notification: " + message;
     }
 
     /**
-     * 点对点发送消息
+     * Sends a point-to-point message from one user to another.
      * <p>
-     * 模拟 张三 给 李四 发送消息场景
+     * Simulates a scenario where Zhang San sends a message to Li Si.
      *
-     * @param principal 当前用户
-     * @param username  接收消息的用户
-     * @param message   消息内容
+     * @param principal The current user (sender)
+     * @param username  The username of the recipient
+     * @param message   The message content
      */
     @MessageMapping("/sendToUser/{username}")
     public void sendToUser(Principal principal, @DestinationVariable String username, String message) {
-        // 发送人
+        // Sender
         String sender = principal.getName();
-        // 接收人
+        // Receiver
         String receiver = username;
 
-        log.info("发送人:{}; 接收人:{}", sender, receiver);
-        // 发送消息给指定用户，拼接后路径 /user/{receiver}/queue/greeting
+        log.info("Sender:{}; Receiver:{}", sender, receiver);
+        // Send message to the specified user, path: /user/{receiver}/queue/greeting
         messagingTemplate.convertAndSendToUser(receiver, "/queue/greeting", new ChatMessage(sender, message));
     }
 

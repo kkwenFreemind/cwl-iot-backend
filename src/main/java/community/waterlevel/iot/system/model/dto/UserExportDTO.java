@@ -8,37 +8,46 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 用户导出视图对象
+ * UserExportDTO is a data transfer object for exporting user data to Excel
+ * files.
+ * <p>
+ * This class defines the fields and formatting for user export operations,
+ * including username, nickname, department, gender, contact information, and
+ * creation time.
+ * Used in conjunction with EasyExcel for generating user reports in the IoT
+ * backend.
  *
  * @author haoxr
  * @since 2022/4/11 8:46
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 
 @Data
 @ColumnWidth(20)
 public class UserExportDTO {
 
-    @ExcelProperty(value = "用户名")
+    @ExcelProperty(value = "username")
     private String username;
 
-    @ExcelProperty(value = "用户昵称")
+    @ExcelProperty(value = "nickname")
     private String nickname;
 
-    @ExcelProperty(value = "部门")
+    @ExcelProperty(value = "deptName")
     private String deptName;
 
-    @ExcelProperty(value = "性别")
+    @ExcelProperty(value = "gender")
     private String gender;
 
-    @ExcelProperty(value = "手机号码")
+    @ExcelProperty(value = "mobile")
     private String mobile;
 
-    @ExcelProperty(value = "邮箱")
+    @ExcelProperty(value = "email")
     private String email;
 
-    @ExcelProperty(value = "创建时间")
+    @ExcelProperty(value = "Create Time")
     @DateTimeFormat("yyyy/MM/dd HH:mm:ss")
     private LocalDateTime createTime;
-
 
 }

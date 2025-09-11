@@ -7,10 +7,17 @@ import lombok.NoArgsConstructor;
 import java.util.Set;
 
 /**
- * 在线用户信息对象
+ * Model representing information about an online user.
+ * Includes user ID, username, department ID, data access scope, and assigned
+ * roles.
+ * Used for session management, monitoring, and access control in security
+ * modules.
  *
  * @author wangtao
  * @since 2025/2/27 10:31
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Data
 @NoArgsConstructor
@@ -18,28 +25,31 @@ import java.util.Set;
 public class OnlineUser {
 
     /**
-     * 用户ID
+     * Unique identifier of the user.
      */
     private Long userId;
 
     /**
-     * 用户名
+     * Username of the online user.
      */
     private String username;
 
     /**
-     * 部门ID
+     * Department ID to which the user belongs.
      */
     private Long deptId;
 
     /**
-     * 数据权限范围
-     * <p>定义用户可访问的数据范围，如全部、本部门或自定义范围</p>
+     * Data access scope for the user.
+     * <p>
+     * Defines the range of data the user can access, such as all data,
+     * department-only, or custom scope.
+     * </p>
      */
     private Integer dataScope;
 
     /**
-     * 角色权限集合
+     * Set of role permissions assigned to the user.
      */
     private Set<String> roles;
 

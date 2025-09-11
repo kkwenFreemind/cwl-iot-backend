@@ -8,20 +8,28 @@ import java.util.List;
 import community.waterlevel.iot.common.base.BasePageQuery;
 
 /**
- * 日志分页查询对象
+ * Page query object for searching and filtering log records.
+ * <p>
+ * Supports keyword-based search on log content, request path, method, region, browser, and OS.
+ * Also allows filtering by operation time range. Inherits pagination features from the base class.
+ * Used for paginated queries in log management features.
+ * </p>
  *
  * @author Ray
  * @since 2.10.0
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11 
  */
-@Schema(description = "日志分页查询对象")
+@Schema(description = "Log paging query object")
 @Getter
 @Setter
 public class LogPageQuery extends BasePageQuery {
 
-    @Schema(description="关键字(日志内容/请求路径/请求方法/地区/浏览器/终端系统)")
+    @Schema(description="Keywords (log content/request path/request method/region/browser/terminal system)")
     private String keywords;
 
-    @Schema(description="操作时间范围")
+    @Schema(description="create Time")
     List<String> createTime;
 
 }

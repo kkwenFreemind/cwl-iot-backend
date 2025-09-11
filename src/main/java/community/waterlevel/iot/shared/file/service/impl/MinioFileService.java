@@ -25,10 +25,23 @@ import java.io.InputStream;
 import java.time.LocalDateTime;
 
 /**
- * MinIO 文件上传服务类
+ * MinioFileService is an implementation of the
+ * {@link community.waterlevel.iot.shared.file.service.FileService} interface
+ * for managing file storage using MinIO object storage.
+ * <p>
+ * This service provides methods for uploading and deleting files in a MinIO
+ * bucket, generating accessible file URLs, and handling bucket creation and
+ * policy configuration. It is activated when the storage type is set to "minio"
+ * in the configuration.
+ * <p>
+ * Designed for use in cloud-native or distributed deployments where scalable
+ * object storage is required.
  *
  * @author Ray.Hao
  * @since 2023/6/2
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Component
 @ConditionalOnProperty(value = "oss.type", havingValue = "minio")
@@ -39,64 +52,70 @@ import java.time.LocalDateTime;
 public class MinioFileService implements FileService {
 
     /**
-     * 服务Endpoint
+     * Service endpoint for MinIO server
      */
     private String endpoint;
     /**
-     * 访问凭据
+     * Access key for MinIO authentication
      */
     private String accessKey;
     /**
-     * 凭据密钥
+     * Secret key for MinIO authentication
      */
     private String secretKey;
     /**
-     * 存储桶名称
+     * Name of the MinIO bucket
      */
     private String bucketName;
     /**
-     * 自定义域名
+     * Custom domain for file access (optional)
      */
     private String customDomain;
 
     private MinioClient minioClient;
 
-    // 依赖注入完成之后执行初始化
+    /**
+     * Initializes the MinioClient after dependency injection is complete.
+     */
     @PostConstruct
     public void init() {
         minioClient = MinioClient.builder()
                 .endpoint(endpoint)
                 .credentials(accessKey, secretKey)
                 .build();
-        // 创建存储桶(存储桶不存在)
         // createBucketIfAbsent(bucketName);
     }
 
 
     /**
-     * 上传文件
+     * Uploads a file to the MinIO server and returns file information.
      *
-     * @param file 表单文件对象
-     * @return 文件信息
+     * @param file  Multipart file object to upload
+     * @return  FileInfo object containing file name and URL
      */
     @Override
     public FileInfo uploadFile(MultipartFile file) {
 
-        // 创建存储桶(存储桶不存在)，如果有搭建好的minio服务，建议放在init方法中
+        // Create the bucket if it does not exist (recommended to do in init if MinIO is already set up)
         createBucketIfAbsent(bucketName);
 
-        // 文件原生名称
+
+        // Original file name
         String originalFilename = file.getOriginalFilename();
-        // 文件后缀
+
+        // File extension
         String suffix = FileUtil.getSuffix(originalFilename);
-        // 文件夹名称
+
+        // Folder name based on current date
         String dateFolder = DateUtil.format(LocalDateTime.now(), "yyyyMMdd");
-        // 文件名称
+
+        // Unique file name
         String fileName = IdUtil.simpleUUID() + "." + suffix;
 
-        //  try-with-resource 语法糖自动释放流
+
+        // Use try-with-resources to auto-close the stream
         try (InputStream inputStream = file.getInputStream()) {
-            // 文件上传
+            // Upload file to MinIO
             PutObjectArgs putObjectArgs = PutObjectArgs.builder()
                     .bucket(bucketName)
                     .object(dateFolder + "/"+ fileName)
@@ -105,11 +124,11 @@ public class MinioFileService implements FileService {
                     .build();
             minioClient.putObject(putObjectArgs);
 
-            // 返回文件路径
+            // Return file URL
             String fileUrl;
-            // 未配置自定义域名
+            // If custom domain is not configured
             if (StrUtil.isBlank(customDomain)) {
-                // 获取文件URL
+                // Get file URL from MinIO
                 GetPresignedObjectUrlArgs getPresignedObjectUrlArgs = GetPresignedObjectUrlArgs.builder()
                         .bucket(bucketName)
                         .object(dateFolder + "/"+ fileName)
@@ -119,7 +138,7 @@ public class MinioFileService implements FileService {
                 fileUrl = minioClient.getPresignedObjectUrl(getPresignedObjectUrlArgs);
                 fileUrl = fileUrl.substring(0, fileUrl.indexOf("?"));
             } else {
-                // 配置自定义文件路径域名
+                // Use custom domain for file URL
                 fileUrl = customDomain + "/"+ bucketName + "/"+ dateFolder + "/"+ fileName;
             }
 
@@ -128,28 +147,26 @@ public class MinioFileService implements FileService {
             fileInfo.setUrl(fileUrl);
             return fileInfo;
         } catch (Exception e) {
-            log.error("上传文件失败", e);
+            log.error("File upload failed", e);
             throw new BusinessException(ResultCode.UPLOAD_FILE_EXCEPTION, e.getMessage());
         }
     }
 
 
     /**
-     * 删除文件
+     * Deletes a file from the MinIO server by its full path.
      *
-     * @param filePath 文件完整路径
-     * @return 是否删除成功
+     * @param filePath  Full file path to delete
+     * @return  true if deletion is successful, false otherwise
      */
     @Override
     public boolean deleteFile(String filePath) {
-        Assert.notBlank(filePath, "删除文件路径不能为空");
+        Assert.notBlank(filePath, "The path to delete the file cannot be empty");
         try {
             String fileName;
             if (StrUtil.isNotBlank(customDomain)) {
-                // https://oss.youlai.tech/default/20221120/test.jpg → 20221120/websocket.jpg
                 fileName = filePath.substring(customDomain.length() + 1 + bucketName.length() + 1); // 两个/占了2个字符长度
             } else {
-                // http://localhost:9000/default/20221120/test.jpg → 20221120/websocket.jpg
                 fileName = filePath.substring(endpoint.length() + 1 + bucketName.length() + 1);
             }
             RemoveObjectArgs removeObjectArgs = RemoveObjectArgs.builder()
@@ -160,7 +177,7 @@ public class MinioFileService implements FileService {
             minioClient.removeObject(removeObjectArgs);
             return true;
         } catch (Exception e) {
-            log.error("删除文件失败", e);
+            log.error("Failed to delete file", e);
             throw new BusinessException(ResultCode.DELETE_FILE_EXCEPTION, e.getMessage());
         }
     }
@@ -168,13 +185,13 @@ public class MinioFileService implements FileService {
 
     /**
      * PUBLIC桶策略
-     * 如果不配置，则新建的存储桶默认是PRIVATE，则存储桶文件会拒绝访问 Access Denied
+     * Returns the public bucket policy in JSON format for the specified bucket.
+     * If not configured, newly created buckets are PRIVATE by default and files will be denied access (Access Denied).
      *
-     * @param bucketName 存储桶名称
-     * @return 存储桶策略
+     * @param bucketName  Name of the bucket
+     * @return  JSON string of the bucket policy
      */
     private static String publicBucketPolicy(String bucketName) {
-        // AWS的S3存储桶策略 JSON 格式 https://docs.aws.amazon.com/zh_cn/AmazonS3/latest/userguide/example-bucket-policies.html
         return "{\"Version\":\"2012-10-17\","
                 + "\"Statement\":[{\"Effect\":\"Allow\","
                 + "\"Principal\":{\"AWS\":[\"*\"]},"
@@ -186,9 +203,9 @@ public class MinioFileService implements FileService {
     }
 
     /**
-     * 创建存储桶(存储桶不存在)
+     * Creates a bucket if it does not already exist.
      *
-     * @param bucketName 存储桶名称
+     * @param bucketName  Name of the bucket to create
      */
     @SneakyThrows
     private void createBucketIfAbsent(String bucketName) {
@@ -198,7 +215,7 @@ public class MinioFileService implements FileService {
 
             minioClient.makeBucket(makeBucketArgs);
 
-            // 设置存储桶访问权限为PUBLIC， 如果不配置，则新建的存储桶默认是PRIVATE，则存储桶文件会拒绝访问 Access Denied
+            // Set bucket access policy to PUBLIC. If not set, new buckets are PRIVATE by default and files will be denied access.
             SetBucketPolicyArgs setBucketPolicyArgs = SetBucketPolicyArgs
                     .builder()
                     .bucket(bucketName)

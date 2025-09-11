@@ -7,7 +7,7 @@ import community.waterlevel.iot.common.constant.SystemConstants;
 import community.waterlevel.iot.common.result.ResultCode;
 import community.waterlevel.iot.common.util.IPUtils;
 import community.waterlevel.iot.common.util.ResponseUtils;
-import community.waterlevel.iot.system.service.ConfigService;
+import community.waterlevel.iot.system.service.SystemConfigService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,78 +21,107 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * IP 限流过滤器
+ * Servlet filter for IP-based rate limiting.
+ * Restricts the number of requests from a single IP address within a specified time window,
+ * using Redis for request counting and system configuration for dynamic threshold control.
+ * Returns a standardized error response when the rate limit is exceeded.
  *
  * @author Theo
  * @since 2024/08/10 14:38
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Slf4j
 public class RateLimiterFilter extends OncePerRequestFilter {
 
+    /**
+     * Redis template for accessing rate limiting counters.
+     */
     private final RedisTemplate<String, Object> redisTemplate;
-    private final ConfigService configService;
 
-    private static final long DEFAULT_IP_LIMIT = 10L; // 默认 IP 限流阈值
+    /**
+     * Service for retrieving system configuration values.
+     */
+    private final SystemConfigService configService;
 
-    public RateLimiterFilter(RedisTemplate<String, Object> redisTemplate, ConfigService configService) {
+    /**
+     * Default IP rate limit threshold (requests per second).
+     */
+    private static final long DEFAULT_IP_LIMIT = 10L;
+
+    /**
+     * Constructs a new {@code RateLimiterFilter} with the given Redis template and
+     * config service.
+     *
+     * @param redisTemplate the Redis template for rate limiting
+     * @param configService the system configuration service
+     */
+    public RateLimiterFilter(RedisTemplate<String, Object> redisTemplate, SystemConfigService configService) {
         this.redisTemplate = redisTemplate;
         this.configService = configService;
     }
 
     /**
-     * 判断 IP 是否触发限流
-     * 默认限制同一 IP 每秒最多请求 10 次，可通过系统配置调整。
-     * 如果系统未配置限流阈值，默认跳过限流。
+     * Determines whether the given IP address has exceeded the allowed request
+     * rate.
+     * <p>
+     * By default, limits each IP to 10 requests per second. The threshold can be
+     * adjusted via system configuration.
+     * If no threshold is configured, rate limiting is skipped.
+     * </p>
      *
-     * @param ip IP 地址
-     * @return 是否限流：true 表示限流；false 表示未限流
+     * @param ip the IP address to check
+     * @return {@code true} if the IP is rate limited; {@code false} otherwise
      */
     public boolean rateLimit(String ip) {
-        // 限流 Redis 键
+
         String key = StrUtil.format(RedisConstants.RateLimiter.IP, ip);
 
-        // 自增请求计数
         Long count = redisTemplate.opsForValue().increment(key);
         if (count == null || count == 1) {
-            // 第一次访问时设置过期时间为 1 秒
             redisTemplate.expire(key, 1, TimeUnit.SECONDS);
         }
 
-        // 获取系统配置的限流阈值
-        Object systemConfig = configService.getSystemConfig(SystemConstants.SYSTEM_CONFIG_IP_QPS_LIMIT_KEY);
-        if (systemConfig == null) {
-            // 系统未配置限流，跳过限流逻辑
-            log.warn("系统未配置限流阈值，跳过限流");
+        String systemConfig = configService.getConfigValue(SystemConstants.SYSTEM_CONFIG_IP_QPS_LIMIT_KEY);
+        if (StrUtil.isBlank(systemConfig)) {
+            log.warn("The system does not configure the current limit threshold, skip the current limit");
             return false;
         }
 
-        // 转换系统配置为限流值，默认为 10
         long limit = Convert.toLong(systemConfig, DEFAULT_IP_LIMIT);
         return count != null && count > limit;
     }
 
     /**
-     * 执行 IP 限流逻辑
-     * 如果 IP 请求超出限制，直接返回限流响应；否则继续执行过滤器链。
+     * Executes the IP rate limiting logic for each incoming request.
+     * <p>
+     * If the IP exceeds the allowed request rate, a rate limit error response is
+     * returned and the filter chain is not continued.
+     * Otherwise, the request proceeds through the filter chain.
+     * </p>
      *
-     * @param request     请求体
-     * @param response    响应体
-     * @param filterChain 过滤器链
+     * @param request     the HTTP servlet request
+     * @param response    the HTTP servlet response
+     * @param filterChain the filter chain
+     * @throws ServletException if a servlet error occurs
+     * @throws IOException      if an I/O error occurs
      */
     @Override
     protected void doFilterInternal(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response,
-                                    @NotNull FilterChain filterChain) throws ServletException, IOException {
-        // 获取请求的 IP 地址
+            @NotNull FilterChain filterChain) throws ServletException, IOException {
+        // Get the request's IP address
         String ip = IPUtils.getIpAddr(request);
 
-        // 判断是否限流
+        // Check if the IP is rate limited
         if (rateLimit(ip)) {
-            // 返回限流错误信息
+            // Return rate limit error response
             ResponseUtils.writeErrMsg(response, ResultCode.REQUEST_CONCURRENCY_LIMIT_EXCEEDED);
             return;
         }
 
-        // 未触发限流，继续执行过滤器链
+        // Not rate limited, continue with the filter chain
         filterChain.doFilter(request, response);
     }
 }
+

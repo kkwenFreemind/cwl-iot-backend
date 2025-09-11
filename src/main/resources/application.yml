@@ -1,11 +1,9 @@
 spring:
   application:
-    name: youlai-boot
+    name: cwl-iot-backend
   profiles:
     active: dev
-  config:
-    import: classpath:codegen.yml
 
-# 在 banner.txt 中显示项目版本，使用 @project.version@ 从 pom.xml 获取
+# 在 banner.txt 中顯示專案版本，使用 @project.version@ 從 pom.xml 獲取
 project:
   version: @project.version@

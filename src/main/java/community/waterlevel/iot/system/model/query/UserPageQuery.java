@@ -13,41 +13,46 @@ import lombok.EqualsAndHashCode;
 import java.util.List;
 
 /**
- * 用户分页查询对象
+ * Page query object for searching and filtering user records.
+ * <p>
+ * Supports keyword-based search on username, nickname, or mobile, filtering by status, department, roles,
+ * creation time range, and sorting by specified fields and direction. Inherits pagination features from the base class.
+ * Used for paginated queries in user management features.
+ * </p>
  *
  * @author haoxr
  * @since 2022/1/14
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-@Schema(description = "用户分页查询对象")
+@Schema(description = "User paging query object")
 public class UserPageQuery extends BasePageQuery {
 
-    @Schema(description = "关键字(用户名/昵称/手机号)")
+    @Schema(description = "Keywords (username/nickname/mobile phone number)")
     private String keywords;
 
-    @Schema(description = "用户状态")
+    @Schema(description = "User Status")
     private Integer status;
 
-    @Schema(description = "部门ID")
+    @Schema(description = "deptId")
     private Long deptId;
 
-    @Schema(description = "角色ID")
+    @Schema(description = "roleIds")
     private List<Long> roleIds;
 
-    @Schema(description = "创建时间范围")
+    @Schema(description = "create Time")
     private List<String> createTime;
 
-    @Schema(description = "排序的字段")
+    @Schema(description = "Sort fields")
     @ValidField(allowedValues = {"create_time", "update_time"})
     private String field;
 
-    @Schema(description = "排序方式（正序:ASC；反序:DESC）")
+    @Schema(description = "Sorting method (positive order: ASC; reverse order: DESC)")
     private Direction direction;
 
-    /**
-     * 是否超级管理员
-     */
     @JsonIgnore
     @Schema(hidden = true)
     private Boolean isRoot;

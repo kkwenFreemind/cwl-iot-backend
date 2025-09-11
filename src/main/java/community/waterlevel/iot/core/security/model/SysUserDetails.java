@@ -14,57 +14,63 @@ import java.util.Collections;
 import java.util.stream.Collectors;
 
 /**
- * Spring Security 用户认证对象
- * <p>
- * 封装了用户的基本信息和权限信息，供 Spring Security 进行用户认证与授权。
- * 实现了 {@link UserDetails} 接口，提供用户的核心信息。
+ * User authentication and authorization model for Spring Security.
+ * Implements {@link UserDetails} to provide user identity, credentials, status, and authorities.
+ * Encapsulates user information and roles for authentication and access control.
  *
  * @author Ray.Hao
  * @version 3.0.0
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Data
 @NoArgsConstructor
 public class SysUserDetails implements UserDetails {
 
     /**
-     * 用户ID
+     * Unique identifier of the user.
      */
     private Long userId;
 
     /**
-     * 用户名
+     * Username of the user.
      */
     private String username;
 
     /**
-     * 密码
+     * Password of the user.
      */
     private String password;
 
     /**
-     * 账号是否启用(true:启用 false:禁用)
+     * Whether the account is enabled (true: enabled, false: disabled).
      */
     private Boolean enabled;
 
     /**
-     * 部门ID
+     * Department ID to which the user belongs.
      */
     private Long deptId;
 
     /**
-     * 数据权限范围
+     * Data access scope for the user.
      */
     private Integer dataScope;
 
     /**
-     * 用户角色权限集合
+     * Collection of user role authorities.
      */
     private Collection<SimpleGrantedAuthority> authorities;
 
     /**
-     * 构造函数：根据用户认证信息初始化用户详情对象
+     * Constructs a {@code SysUserDetails} object from the given user authentication
+     * credentials.
+     * <p>
+     * Initializes user details and authorities for use by Spring Security.
+     * </p>
      *
-     * @param user 用户认证信息对象 {@link UserAuthCredentials}
+     * @param user the user authentication credentials ({@link UserAuthCredentials})
      */
     public SysUserDetails(UserAuthCredentials user) {
         this.userId = user.getUserId();
@@ -74,31 +80,51 @@ public class SysUserDetails implements UserDetails {
         this.deptId = user.getDeptId();
         this.dataScope = user.getDataScope();
 
-        // 初始化角色权限集合
+        // Initialize role authorities collection
         this.authorities = CollectionUtil.isNotEmpty(user.getRoles())
                 ? user.getRoles().stream()
-                // 角色名加上前缀 "ROLE_"，用于区分角色 (ROLE_ADMIN) 和权限 (user:add)
-                .map(role -> new SimpleGrantedAuthority(SecurityConstants.ROLE_PREFIX + role))
-                .collect(Collectors.toSet())
+                        // Prefix role names with "ROLE_" to distinguish roles (ROLE_ADMIN) from
+                        // permissions (user:add)
+                        .map(role -> new SimpleGrantedAuthority(SecurityConstants.ROLE_PREFIX + role))
+                        .collect(Collectors.toSet())
                 : Collections.emptySet();
     }
 
-
+    /**
+     * Returns the authorities granted to the user.
+     *
+     * @return the authorities, not null
+     */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return this.authorities;
     }
 
+    /**
+     * Returns the password used to authenticate the user.
+     *
+     * @return the password
+     */
     @Override
     public String getPassword() {
         return this.password;
     }
 
+    /**
+     * Returns the username used to authenticate the user.
+     *
+     * @return the username
+     */
     @Override
     public String getUsername() {
         return this.username;
     }
 
+    /**
+     * Indicates whether the user is enabled or disabled.
+     *
+     * @return {@code true} if the user is enabled, {@code false} otherwise
+     */
     @Override
     public boolean isEnabled() {
         return this.enabled;

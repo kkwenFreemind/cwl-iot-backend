@@ -5,10 +5,18 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * 验证码 属性配置
+ * Configuration properties for captcha generation and validation.
+ * Supports customization of captcha type, image size, interference, text style,
+ * expiration,
+ * and nested configuration for code and font properties.
+ * Mapped from properties with the prefix "captcha" in the application
+ * configuration.
  *
  * @author haoxr
  * @since 2023/11/24
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Component
 @ConfigurationProperties(prefix = "captcha")
@@ -16,77 +24,81 @@ import org.springframework.stereotype.Component;
 public class CaptchaProperties {
 
     /**
-     * 验证码类型  circle-圆圈干扰验证码|gif-Gif验证码|line-干扰线验证码|shear-扭曲干扰验证码
+     * CAPTCHA type. Supported values: {@code circle} (circle interference),
+     * {@code gif} (GIF CAPTCHA),
+     * {@code line} (line interference), {@code shear} (distorted interference).
      */
     private String type;
 
     /**
-     * 验证码图片宽度
+     * CAPTCHA image width (in pixels).
      */
     private int width;
     /**
-     * 验证码图片高度
+     * CAPTCHA image height (in pixels).
      */
     private int height;
 
     /**
-     * 干扰线数量
+     * Number of interference lines in the CAPTCHA image.
      */
     private int interfereCount;
 
     /**
-     * 文本透明度
+     * Text opacity (alpha) for the CAPTCHA characters.
      */
     private Float textAlpha;
 
     /**
-     * 验证码过期时间，单位：秒
+     * CAPTCHA expiration time in seconds.
      */
     private Long expireSeconds;
 
     /**
-     * 验证码字符配置
+     * CAPTCHA code character configuration.
      */
     private CodeProperties code;
 
     /**
-     * 验证码字体
+     * CAPTCHA font configuration.
      */
     private FontProperties font;
 
     /**
-     * 验证码字符配置
+     * Configuration for CAPTCHA code characters.
      */
     @Data
     public static class CodeProperties {
         /**
-         * 验证码字符类型 math-算术|random-随机字符串
+         * CAPTCHA code type. Supported values: {@code math} (arithmetic),
+         * {@code random} (random string).
          */
         private String type;
         /**
-         * 验证码字符长度，type=算术时，表示运算位数(1:个位数 2:十位数)；type=随机字符时，表示字符个数
+         * CAPTCHA code length. If {@code type=math}, represents the number of digits in
+         * the arithmetic operation (1: single digit, 2: double digit).
+         * If {@code type=random}, represents the number of characters.
          */
         private int length;
     }
 
     /**
-     * 验证码字体配置
+     * Configuration for CAPTCHA font settings.
      */
     @Data
     public static class FontProperties {
         /**
-         * 字体名称
+         * Font name.
          */
         private String name;
         /**
-         * 字体样式  0-普通|1-粗体|2-斜体
+         * Font style. {@code 0} - normal, {@code 1} - bold, {@code 2} - italic.
          */
         private int weight;
         /**
-         * 字体大小
+         * Font size (in points).
          */
         private int size;
     }
-
 
 }

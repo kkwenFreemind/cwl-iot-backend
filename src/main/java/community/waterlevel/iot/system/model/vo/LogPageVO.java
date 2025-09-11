@@ -10,51 +10,58 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 系统日志分页VO
+ * View object representing a paginated system log record for API responses.
+ * <p>
+ * Encapsulates log ID, module, content, request details, IP, region, browser, OS, execution time, operator, and timestamps.
+ * Used to transfer paginated log data from the backend to the client in log management features.
+ * </p>
  *
  * @author Ray
  * @since 2.10.0
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Data
-@Schema(description = "系统日志分页VO")
+@Schema(description = "LogPage VO")
 public class LogPageVO implements Serializable {
 
-    @Schema(description = "主键")
+    @Schema(description = "id")
     private Long id;
 
-    @Schema(description = "日志模块")
+    @Schema(description = "module")
     private LogModuleEnum module;
 
-    @Schema(description = "日志内容")
+    @Schema(description = "content")
     private String content;
 
-    @Schema(description = "请求路径")
+    @Schema(description = "requestUri")
     private String requestUri;
 
-    @Schema(description = "请求方法")
+    @Schema(description = "method")
     private String method;
 
-    @Schema(description = "IP 地址")
+    @Schema(description = "IP Address")
     private String ip;
 
-    @Schema(description = "地区")
+    @Schema(description = "region")
     private String region;
 
-    @Schema(description = "浏览器")
+    @Schema(description = "browser")
     private String browser;
 
-    @Schema(description = "终端系统")
+    @Schema(description = "os")
     private String os;
 
-    @Schema(description = "执行时间(毫秒)")
+    @Schema(description = "executionTime(millisecond)")
     private Long executionTime;
 
-    @Schema(description = "创建人ID")
+    @Schema(description = "createBy")
     private Long createBy;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
 
-    @Schema(description = "操作人")
+    @Schema(description = "operator")
     private String operator;
 }

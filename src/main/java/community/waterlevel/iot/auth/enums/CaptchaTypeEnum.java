@@ -1,27 +1,32 @@
 package community.waterlevel.iot.auth.enums;
 
 /**
- * EasyCaptcha 验证码类型枚举
+ * Enumeration of supported EasyCaptcha verification code types.
+ * Defines the available captcha styles for user authentication and bot prevention.
  *
  * @author haoxr
  * @since 2.5.1
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
+ * 
  */
 public enum CaptchaTypeEnum {
 
     /**
-     * 圆圈干扰验证码
+     * Circle interference captcha
      */
     CIRCLE,
     /**
-     * GIF验证码
+     * GIF captcha
      */
     GIF,
     /**
-     * 干扰线验证码
+     * Line interference captcha
      */
     LINE,
     /**
-     * 扭曲干扰验证码
+     * Shear (distorted) interference captcha
      */
     SHEAR
 }

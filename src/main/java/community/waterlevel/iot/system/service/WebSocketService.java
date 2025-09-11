@@ -1,46 +1,49 @@
 package community.waterlevel.iot.system.service;
 
 /**
- * WebSocket服务接口
+ * WebSocket service interface for managing real-time communication and
+ * notifications.
  * <p>
- * 提供与WebSocket连接管理相关的功能，包括：
- * - 用户连接/断开事件处理
- * - 字典数据变更通知
- * - 系统消息推送
+ * Provides methods for handling user connection events, broadcasting dictionary
+ * data changes,
+ * and sending system notifications to users via WebSocket.
  * </p>
  *
  * @author Ray.Hao
  * @since 3.0.0
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 public interface WebSocketService {
 
     /**
-     * 处理用户连接事件
+     * Handles the event when a user establishes a WebSocket connection.
      *
-     * @param username  用户名
-     * @param sessionId WebSocket会话ID
+     * @param username  the username of the connected user
+     * @param sessionId the session ID of the connection
      */
     void userConnected(String username, String sessionId);
 
     /**
-     * 处理用户断开连接事件
+     * Handles the event when a user disconnects from the WebSocket.
      *
-     * @param username 用户名
+     * @param username the username of the disconnected user
      */
     void userDisconnected(String username);
 
     /**
-     * 广播字典数据变更通知
+     * Broadcasts a notification to all clients that a dictionary entry has changed.
      *
-     * @param dictCode 字典编码
+     * @param dictCode the code of the dictionary that has changed
      */
     void broadcastDictChange(String dictCode);
 
     /**
-     * 发送系统通知给特定用户
+     * Sends a system notification message to a specific user via WebSocket.
      *
-     * @param username 目标用户名
-     * @param message  通知消息内容
+     * @param username the username of the recipient
+     * @param message  the notification message object
      */
     void sendNotification(String username, Object message);
-} 
+}

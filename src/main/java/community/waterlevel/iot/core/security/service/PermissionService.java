@@ -13,84 +13,149 @@ import org.springframework.util.PatternMatchUtils;
 import java.util.*;
 
 /**
- * SpringSecurity 权限校验
+ * Service for permission validation in Spring Security.
+ * Provides methods to check if the current user has the required permissions,
+ * leveraging role-based access control and permission caching in Redis.
+ * Supports wildcard permission matching and super admin bypass.
  *
  * @author haoxr
  * @since 2022/2/22
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Component("ss")
 @RequiredArgsConstructor
 @Slf4j
 public class PermissionService {
 
+    /**
+     * Redis template for accessing role permissions cache.
+     */
     private final RedisTemplate<String, Object> redisTemplate;
 
     /**
-     * 判断当前登录用户是否拥有操作权限
+     * Determines whether the current logged-in user has the required permission.
+     * <p>
+     * Checks for super admin, retrieves user roles, and matches permissions
+     * (supports wildcards).
+     * </p>
      *
-     * @param requiredPerm 所需权限
-     * @return 是否有权限
+     * @param requiredPerm the required permission string
+     * @return {@code true} if the user has the permission; {@code false} otherwise
      */
     public boolean hasPerm(String requiredPerm) {
 
         if (StrUtil.isBlank(requiredPerm)) {
             return false;
         }
-        // 超级管理员放行
+
         if (SecurityUtils.isRoot()) {
             return true;
         }
 
-        // 获取当前登录用户的角色编码集合
         Set<String> roleCodes = SecurityUtils.getRoles();
         if (CollectionUtil.isEmpty(roleCodes)) {
             return false;
         }
 
-        // 获取当前登录用户的所有角色的权限列表
         Set<String> rolePerms = this.getRolePermsFormCache(roleCodes);
         if (CollectionUtil.isEmpty(rolePerms)) {
             return false;
         }
-        // 判断当前登录用户的所有角色的权限列表中是否包含所需权限
+
         boolean hasPermission = rolePerms.stream()
-                .anyMatch(rolePerm ->
-                        // 匹配权限，支持通配符(* 等)
-                        PatternMatchUtils.simpleMatch(rolePerm, requiredPerm)
-                );
+                .anyMatch(rolePerm -> PatternMatchUtils.simpleMatch(rolePerm, requiredPerm));
 
         if (!hasPermission) {
-            log.error("用户无操作权限：{}",requiredPerm);
+            log.error("使用者無操作許可權：{}", requiredPerm);
         }
         return hasPermission;
     }
 
-
     /**
-     * 从缓存中获取角色权限列表
+     * Retrieves the set of permissions for the given role codes from the cache
+     * (Redis).
+     * <p>
+     * Fetches and aggregates permissions for all specified roles, handling cache
+     * misses and type checks.
+     * </p>
      *
-     * @param roleCodes 角色编码集合
-     * @return 角色权限列表
+     * @param roleCodes the set of role codes
+     * @return the set of permissions for the roles, or an empty set if not found
      */
     public Set<String> getRolePermsFormCache(Set<String> roleCodes) {
-        // 检查输入是否为空
+        log.debug("Fetching role permissions, input role codes: {}", roleCodes);
+
         if (CollectionUtil.isEmpty(roleCodes)) {
+            log.warn("If the role code set is empty, an empty set is returned.");
             return Collections.emptySet();
         }
 
         Set<String> perms = new HashSet<>();
-        // 从缓存中一次性获取所有角色的权限
-        Collection<Object> roleCodesAsObjects = new ArrayList<>(roleCodes);
-        List<Object> rolePermsList = redisTemplate.opsForHash().multiGet(RedisConstants.System.ROLE_PERMS, roleCodesAsObjects);
 
-        for (Object rolePermsObj : rolePermsList) {
-            if (rolePermsObj instanceof Set) {
-                @SuppressWarnings("unchecked")
-                Set<String> rolePerms = (Set<String>) rolePermsObj;
-                perms.addAll(rolePerms);
+        try {
+            Boolean hasKey = redisTemplate.hasKey(RedisConstants.System.ROLE_PERMS);
+            log.debug("Does the permission cache key exist in Redis {}: {}", RedisConstants.System.ROLE_PERMS, hasKey);
+
+            if (Boolean.TRUE.equals(hasKey)) {
+                Set<Object> allRoleCodes = redisTemplate.opsForHash().keys(RedisConstants.System.ROLE_PERMS);
+                log.info("All role codes cached in Redis: {}", allRoleCodes);
             }
+
+            Collection<Object> roleCodesAsObjects = new ArrayList<>(roleCodes);
+            log.debug("Prepare to obtain permissions from the Redis cache, cache key: {}, Role Coding: {}",
+                    RedisConstants.System.ROLE_PERMS, roleCodesAsObjects);
+
+            List<Object> rolePermsList = redisTemplate.opsForHash().multiGet(RedisConstants.System.ROLE_PERMS,
+                    roleCodesAsObjects);
+            log.debug("The permission list obtained from Redis: {}", rolePermsList);
+
+            if (rolePermsList == null || rolePermsList.isEmpty()) {
+                log.warn("The permission list obtained from Redis is empty or null");
+                return Collections.emptySet();
+            }
+
+            int nullCount = 0;
+            int validCount = 0;
+
+            for (int i = 0; i < rolePermsList.size(); i++) {
+                Object rolePermsObj = rolePermsList.get(i);
+                String currentRoleCode = roleCodesAsObjects.size() > i ? roleCodesAsObjects.toArray()[i].toString()
+                        : "unknown";
+
+                if (rolePermsObj == null) {
+                    nullCount++;
+                    log.warn("Role {} There is no corresponding permission data in the cache", currentRoleCode);
+                    continue;
+                }
+
+                log.debug("Role {} Permission object type: {}, Value: {}",
+                        currentRoleCode, rolePermsObj.getClass().getName(), rolePermsObj);
+
+                if (rolePermsObj instanceof Set) {
+                    @SuppressWarnings("unchecked")
+                    Set<String> rolePerms = (Set<String>) rolePermsObj;
+                    log.debug("Role {}'s permission set size: {}, content: {}",
+                            currentRoleCode, rolePerms.size(), rolePerms);
+                    perms.addAll(rolePerms);
+                    validCount++;
+                } else {
+                    log.warn("The permission object of Role {} is not of Set type, actual type: {}, value: {}",
+                            currentRoleCode, rolePermsObj.getClass().getName(), rolePermsObj);
+                }
+            }
+
+            log.info(
+                    "Permission acquisition completed - Number of valid roles: {}, Number of empty roles: {}, Final number of permissions: {}",
+                    validCount, nullCount, perms.size());
+
+        } catch (Exception e) {
+            log.error("An exception occurred while retrieving role permissions from Redis.", e);
+            return Collections.emptySet();
         }
 
+        log.debug("Returned permission set: {}", perms);
         return perms;
     }
 

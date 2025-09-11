@@ -8,13 +8,26 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-@Schema(description ="字典项分页查询对象")
+/**
+ * Page query object for searching and filtering dictionary item records.
+ * <p>
+ * Supports keyword-based search on dictionary item value or name, and filtering by dictionary code.
+ * Inherits pagination features from the base class. Used for paginated queries in dictionary item management.
+ * </p>
+ * 
+ * @author youlaitech
+ * @since 2024-08-27 10:31
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
+ */
+@Schema(description ="Dictionary item page query object")
 public class DictItemPageQuery extends BasePageQuery {
 
-    @Schema(description="关键字(字典项值/字典项名称)")
+    @Schema(description="Keyword (dictionary item value/dictionary item name)")
     private String keywords;
 
-    @Schema(description="字典编码")
+    @Schema(description="Dictionary encoding")
     private String dictCode;
 
 }

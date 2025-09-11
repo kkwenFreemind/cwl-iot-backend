@@ -33,59 +33,68 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * 全局系统异常处理器
- * <p>
- * 调整异常处理的HTTP状态码，丰富异常处理类型
+ * Global exception handler for the application.
+ * Centralizes the handling of various exceptions thrown by controllers and services,
+ * providing standardized error responses and logging.
+ * Improves API robustness, user experience, and maintainability by managing validation,
+ * business, SQL, and unexpected exceptions in a unified way.
  */
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
     /**
-     * 处理绑定异常
-     * <p>
-     * 当请求参数绑定到对象时发生错误，会抛出 BindException 异常。
+     * Handles BindException for validation errors on binding request parameters.
+     *
+     * @param e the BindException
+     * @return Result with user request parameter error and details
      */
     @ExceptionHandler(BindException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public <T> Result<T> processException(BindException e) {
         log.error("BindException:{}", e.getMessage());
-        String msg = e.getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).collect(Collectors.joining("；"));
+        String msg = e.getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .collect(Collectors.joining("；"));
         return Result.failed(ResultCode.USER_REQUEST_PARAMETER_ERROR, msg);
     }
 
     /**
-     * 处理 @RequestParam 参数校验异常
-     * <p>
-     * 当请求参数在校验过程中发生违反约束条件的异常时（如 @RequestParam 验证不通过），
-     * 会捕获到 ConstraintViolationException 异常。
+     * Handles ConstraintViolationException for validation errors on method
+     * parameters.
+     *
+     * @param e the ConstraintViolationException
+     * @return Result with invalid user input error and details
      */
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public <T> Result<T> processException(ConstraintViolationException e) {
         log.error("ConstraintViolationException:{}", e.getMessage());
-        String msg = e.getConstraintViolations().stream().map(ConstraintViolation::getMessage).collect(Collectors.joining("；"));
+        String msg = e.getConstraintViolations().stream().map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining("；"));
         return Result.failed(ResultCode.INVALID_USER_INPUT, msg);
     }
 
     /**
-     * 处理方法参数校验异常
-     * <p>
-     * 当使用 @Valid 或 @Validated 注解对方法参数进行验证时，如果验证失败，
-     * 会抛出 MethodArgumentNotValidException 异常。
+     * Handles MethodArgumentNotValidException for validation errors on request
+     * body.
+     *
+     * @param e the MethodArgumentNotValidException
+     * @return Result with invalid user input error and details
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public <T> Result<T> processException(MethodArgumentNotValidException e) {
         log.error("MethodArgumentNotValidException:{}", e.getMessage());
-        String msg = e.getBindingResult().getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage).collect(Collectors.joining("；"));
+        String msg = e.getBindingResult().getAllErrors().stream().map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .collect(Collectors.joining("；"));
         return Result.failed(ResultCode.INVALID_USER_INPUT, msg);
     }
 
     /**
-     * 处理接口不存在的异常
-     * <p>
-     * 当客户端请求一个不存在的路径时，会抛出 NoHandlerFoundException 异常。
+     * Handles NoHandlerFoundException for 404 not found errors.
+     *
+     * @param e the NoHandlerFoundException
+     * @return Result indicating the interface does not exist
      */
     @ExceptionHandler(NoHandlerFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -95,9 +104,11 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理缺少请求参数的异常
-     * <p>
-     * 当请求缺少必需的参数时，会抛出 MissingServletRequestParameterException 异常。
+     * Handles MissingServletRequestParameterException for missing required
+     * parameters.
+     *
+     * @param e the MissingServletRequestParameterException
+     * @return Result indicating required parameter is missing
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -107,21 +118,23 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理方法参数类型不匹配的异常
-     * <p>
-     * 当请求参数类型不匹配时，会抛出 MethodArgumentTypeMismatchException 异常。
+     * Handles MethodArgumentTypeMismatchException for parameter type mismatches.
+     *
+     * @param e the MethodArgumentTypeMismatchException
+     * @return Result indicating parameter format mismatch
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public <T> Result<T> processException(MethodArgumentTypeMismatchException e) {
         log.error(e.getMessage(), e);
-        return Result.failed(ResultCode.PARAMETER_FORMAT_MISMATCH, "类型错误");
+        return Result.failed(ResultCode.PARAMETER_FORMAT_MISMATCH, "Type error");
     }
 
     /**
-     * 处理 Servlet 异常
-     * <p>
-     * 当 Servlet 处理请求时发生异常时，会抛出 ServletException 异常。
+     * Handles ServletException for servlet-related errors.
+     *
+     * @param e the ServletException
+     * @return Result with error message
      */
     @ExceptionHandler(ServletException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -131,39 +144,42 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理非法参数异常
-     * <p>
-     * 当方法接收到非法参数时，会抛出 IllegalArgumentException 异常。
+     * Handles IllegalArgumentException for invalid arguments.
+     *
+     * @param e the IllegalArgumentException
+     * @return Result with error message
      */
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public <T> Result<T> handleIllegalArgumentException(IllegalArgumentException e) {
-        log.error("非法参数异常，异常原因：{}", e.getMessage(), e);
+        log.error("Illegal argument exception: {}", e.getMessage(), e);
         return Result.failed(e.getMessage());
     }
 
     /**
-     * 处理 JSON 处理异常
-     * <p>
-     * 当处理 JSON 数据时发生错误，会抛出 JsonProcessingException 异常。
+     * Handles JsonProcessingException for JSON parsing errors.
+     *
+     * @param e the JsonProcessingException
+     * @return Result with error message
      */
     @ExceptionHandler(JsonProcessingException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public <T> Result<T> handleJsonProcessingException(JsonProcessingException e) {
-        log.error("Json转换异常，异常原因：{}", e.getMessage(), e);
+        log.error("JSON processing exception: {}", e.getMessage(), e);
         return Result.failed(e.getMessage());
     }
 
     /**
-     * 处理请求体不可读的异常
-     * <p>
-     * 当请求体不可读时，会抛出 HttpMessageNotReadableException 异常。
+     * Handles HttpMessageNotReadableException for unreadable HTTP request bodies.
+     *
+     * @param e the HttpMessageNotReadableException
+     * @return Result with error message
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public <T> Result<T> processException(HttpMessageNotReadableException e) {
         log.error(e.getMessage(), e);
-        String errorMessage = "请求体不可为空";
+        String errorMessage = "Request body cannot be empty";
         Throwable cause = e.getCause();
         if (cause != null) {
             errorMessage = convertMessage(cause);
@@ -172,9 +188,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理类型不匹配异常
-     * <p>
-     * 当方法参数类型不匹配时，会抛出 TypeMismatchException 异常。
+     * Handles TypeMismatchException for type conversion errors.
+     *
+     * @param e the TypeMismatchException
+     * @return Result with error message
      */
     @ExceptionHandler(TypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -184,9 +201,11 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理 SQL 语法错误异常
-     * <p>
-     * 当 SQL 语法错误时，会抛出 BadSqlGrammarException 异常。
+     * Handles BadSqlGrammarException for SQL syntax errors and database access
+     * denial.
+     *
+     * @param e the BadSqlGrammarException
+     * @return Result with error message or database access denied code
      */
     @ExceptionHandler(BadSqlGrammarException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
@@ -201,9 +220,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理 SQL 语法错误异常
-     * <p>
-     * 当 SQL 语法错误时，会抛出 SQLSyntaxErrorException 异常。
+     * Handles SQLSyntaxErrorException for SQL syntax errors.
+     *
+     * @param e the SQLSyntaxErrorException
+     * @return Result with error message
      */
     @ExceptionHandler(SQLSyntaxErrorException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
@@ -213,14 +233,15 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理业务异常
-     * <p>
-     * 当业务逻辑发生错误时，会抛出 BusinessException 异常。
+     * Handles custom BusinessException for business logic errors.
+     *
+     * @param e the BusinessException
+     * @return Result with error code and message
      */
     @ExceptionHandler(BusinessException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public <T> Result<T> handleBizException(BusinessException e) {
-        log.error("biz exception", e);
+        log.error("Business exception", e);
         if (e.getResultCode() != null) {
             return Result.failed(e.getResultCode(), e.getMessage());
         }
@@ -228,27 +249,31 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理所有未捕获的异常
-     * <p>
-     * 当发生未捕获的异常时，会抛出 Exception 异常。
+     * Handles all uncaught exceptions. Re-throws Spring Security exceptions for
+     * custom handling.
+     *
+     * @param e the Exception
+     * @return Result with localized error message
+     * @throws Exception if the exception is a Spring Security exception
      */
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public <T> Result<T> handleException(Exception e) throws Exception {
-        // 将 Spring Security 异常继续抛出，以便交给自定义处理器处理
+        // Re-throw Spring Security exceptions for custom handling
         if (e instanceof AccessDeniedException
                 || e instanceof AuthenticationException) {
             throw e;
         }
-        log.error("unknown exception", e);
+        log.error("Unknown exception", e);
         return Result.failed(e.getLocalizedMessage());
     }
 
     /**
-     * 传参类型错误时，用于消息转换
+     * Converts a Throwable to a user-friendly error message for type errors in
+     * request bodies.
      *
-     * @param throwable 异常
-     * @return 错误信息
+     * @param throwable the cause of the error
+     * @return formatted error message
      */
     private String convertMessage(Throwable throwable) {
         String error = throwable.toString();
@@ -259,7 +284,7 @@ public class GlobalExceptionHandler {
         if (matcher.find()) {
             String matchString = matcher.group();
             matchString = matchString.replace("[", "").replace("]", "");
-            matchString = "%s字段类型错误".formatted(matchString.replaceAll("\"", ""));
+            matchString = "%s field type error".formatted(matchString.replaceAll("\"", ""));
             group += matchString;
         }
         return group;

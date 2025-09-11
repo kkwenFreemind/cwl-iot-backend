@@ -6,23 +6,38 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-@Schema(description ="角色分页对象")
+/**
+ * View object representing a paginated role record for API responses.
+ * <p>
+ * Encapsulates role ID, name, code, status, sort order, and timestamps. Used to
+ * transfer
+ * paginated role data from the backend to the client in role management
+ * features.
+ * </p>
+ * 
+ * @author youlaitech
+ * @since 2024-08-27 10:31
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
+ */
+@Schema(description = "Role page view object")
 @Data
 public class RolePageVO {
 
-    @Schema(description="角色ID")
+    @Schema(description = "id")
     private Long id;
 
-    @Schema(description="角色名称")
+    @Schema(description = "name")
     private String name;
 
-    @Schema(description="角色编码")
+    @Schema(description = "code")
     private String code;
 
-    @Schema(description="角色状态")
+    @Schema(description = "status")
     private Integer status;
 
-    @Schema(description="排序")
+    @Schema(description = "sort")
     private Integer sort;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

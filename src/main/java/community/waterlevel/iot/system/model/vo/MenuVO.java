@@ -6,47 +6,62 @@ import lombok.Data;
 
 import java.util.List;
 
-@Schema(description ="菜单视图对象")
+/**
+ * View object representing menu data for API responses.
+ * <p>
+ * Encapsulates menu ID, parent ID, name, type, route, component, sort order,
+ * visibility, icon, redirect, permissions, and child menus.
+ * Used to transfer menu data from the backend to the client in menu management
+ * and navigation features.
+ * </p>
+ * 
+ * @author youlaitech
+ * @since 2024-08-27 10:31
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
+ */
+@Schema(description = "Menu view object")
 @Data
 public class MenuVO {
 
-    @Schema(description = "菜单ID")
+    @Schema(description = "id")
     private Long id;
 
-    @Schema(description = "父菜单ID")
+    @Schema(description = "parentId")
     private Long parentId;
 
-    @Schema(description = "菜单名称")
+    @Schema(description = "name")
     private String name;
 
-    @Schema(description="菜单类型")
+    @Schema(description = "type")
     private Integer type;
 
-    @Schema(description = "路由名称")
+    @Schema(description = "routeName")
     private String routeName;
 
-    @Schema(description = "路由路径")
+    @Schema(description = "routePath")
     private String routePath;
 
-    @Schema(description = "组件路径")
+    @Schema(description = "component")
     private String component;
 
-    @Schema(description = "菜单排序(数字越小排名越靠前)")
+    @Schema(description = "Menu sorting (the smaller the number, the higher the ranking)")
     private Integer sort;
 
-    @Schema(description = "菜单是否可见(1:显示;0:隐藏)")
+    @Schema(description = "Whether the menu is visible (1: show; 0: hide)")
     private Integer visible;
 
     @Schema(description = "ICON")
     private String icon;
 
-    @Schema(description = "跳转路径")
+    @Schema(description = "redirect")
     private String redirect;
 
-    @Schema(description="按钮权限标识")
+    @Schema(description = "Button permission flag")
     private String perm;
 
-    @Schema(description = "子菜单")
+    @Schema(description = "children")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     private List<MenuVO> children;
 

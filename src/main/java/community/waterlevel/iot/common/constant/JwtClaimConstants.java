@@ -1,37 +1,41 @@
 package community.waterlevel.iot.common.constant;
 
 /**
- * JWT Claims声明常量
- * <p>
- * JWT Claims 属于 Payload 的一部分，包含了一些实体（通常指的用户）的状态和额外的元数据。
- *
+ * Defines constant keys for standard JWT claim fields used in the application's tokens.
+ * These claims represent user identity, roles, data scope, and other metadata
+ * included in the JWT payload for authentication and authorization purposes.
+ * 
  * @author haoxr
  * @since 2023/11/24
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
+ * 
  */
 public interface JwtClaimConstants {
 
     /**
-     * 令牌类型
+     * The type of the token (e.g., access, refresh).
      */
     String TOKEN_TYPE = "tokenType";
 
     /**
-     * 用户ID
+     * The unique identifier of the user.
      */
     String USER_ID = "userId";
 
     /**
-     * 部门ID
+     * The department ID to which the user belongs.
      */
     String DEPT_ID = "deptId";
 
     /**
-     * 数据权限
+     * The data access scope for the user (e.g., all, department, custom).
      */
     String DATA_SCOPE = "dataScope";
 
     /**
-     * 权限(角色Code)集合
+     * The authorities or roles granted to the user.
      */
     String AUTHORITIES = "authorities";
 

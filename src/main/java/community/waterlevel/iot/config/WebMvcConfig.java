@@ -28,10 +28,15 @@ import java.util.List;
 import java.util.TimeZone;
 
 /**
- * Web 配置
+ * Web MVC configuration class.
+ * Customizes message converters for JSON serialization (including date/time and large number handling)
+ * and configures the bean validation framework for fail-fast validation and Spring integration.
  *
  * @author Ray.Hao
  * @since 2020/10/16
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11 
  */
 @Configuration
 @Slf4j
@@ -40,29 +45,28 @@ public class WebMvcConfig implements WebMvcConfigurer {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /**
-     * 配置消息转换器
+     * Configures custom message converters for HTTP requests and responses.
+     * <p>
+     * Sets up Jackson to handle Java 8 date/time types, global date format, time
+     * zone, and serializes Long/BigInteger as strings to avoid precision loss in
+     * JavaScript.
      *
-     * @param converters 消息转换器列表
+     * @param converters the list of message converters to configure
      */
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         MappingJackson2HttpMessageConverter jackson2HttpMessageConverter = new MappingJackson2HttpMessageConverter();
         ObjectMapper objectMapper = new ObjectMapper();
 
-        // 注册 JavaTimeModule（替代手动注册 LocalDateTimeSerializer）
         JavaTimeModule javaTimeModule = new JavaTimeModule();
-        // 返回指定字符串格式
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DATE_TIME_FORMATTER));
-        // 反序列化，接受前端传来的格式
         javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(DATE_TIME_FORMATTER));
         objectMapper.registerModule(javaTimeModule);
 
-        // 配置全局日期格式和时区
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
         objectMapper.setTimeZone(TimeZone.getTimeZone("GMT+8"));
 
-        // 处理 Long/BigInteger 的精度问题
         SimpleModule simpleModule = new SimpleModule();
         simpleModule.addSerializer(Long.class, ToStringSerializer.instance);
         simpleModule.addSerializer(BigInteger.class, ToStringSerializer.instance);
@@ -73,20 +77,26 @@ public class WebMvcConfig implements WebMvcConfigurer {
     }
 
     /**
-     * 配置校验器
+     * Configures a custom bean validator for the application.
+     * <p>
+     * Uses Hibernate Validator with fail-fast mode enabled (returns on the first
+     * validation failure) and integrates with Spring's dependency injection for
+     * constraint validators.
      *
-     * @param autowireCapableBeanFactory 用于注入 SpringConstraintValidatorFactory
-     * @return Validator 实例
+     * @param autowireCapableBeanFactory the bean factory for injecting dependencies
+     *                                   into validators
+     * @return the configured {@link Validator} instance
      */
     @Bean
     public Validator validator(final AutowireCapableBeanFactory autowireCapableBeanFactory) {
         try (ValidatorFactory validatorFactory = Validation.byProvider(HibernateValidator.class)
                 .configure()
-                .failFast(true) // failFast=true 时，遇到第一个校验失败则立即返回，false 表示校验所有参数
+                .failFast(true) // failFast=true: return on first validation failure; false: validate all
+                                // parameters
                 .constraintValidatorFactory(new SpringConstraintValidatorFactory(autowireCapableBeanFactory))
                 .buildValidatorFactory()) {
 
-            // 使用 try-with-resources 确保 ValidatorFactory 被正确关闭
+            // Ensure ValidatorFactory is properly closed using try-with-resources
             return validatorFactory.getValidator();
         }
     }

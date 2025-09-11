@@ -15,22 +15,38 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Spring Security 工具类
+ * SecurityUtils provides utility methods for accessing and managing
+ * security-related information in the Spring Security context.
+ * <p>
+ * This class offers convenient static methods to retrieve the current user's
+ * details, roles, department, data scope, and authentication token from the
+ * security context or HTTP request.
+ * It also includes helpers for role checks, such as determining if the current
+ * user is a super administrator.
+ * <p>
+ * Designed for use throughout the application wherever security context
+ * information is needed.
  *
  * @author Ray
  * @since 2021/1/10
+ *
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 public class SecurityUtils {
 
     /**
-     * 获取当前登录人信息
+     * Retrieves the current authenticated user's details from the Spring Security
+     * context.
      *
-     * @return Optional<SysUserDetails>
+     * @return an {@link Optional} containing {@link SysUserDetails} if present,
+     *         otherwise empty
      */
     public static Optional<SysUserDetails> getUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -43,50 +59,52 @@ public class SecurityUtils {
         return Optional.empty();
     }
 
-
     /**
-     * 获取用户ID
+     * Retrieves the user ID of the currently authenticated user.
      *
-     * @return Long
+     * @return the user ID as a {@link Long}, or {@code null} if not available
      */
     public static Long getUserId() {
         return getUser().map(SysUserDetails::getUserId).orElse(null);
     }
 
-
     /**
-     * 获取用户账号
+     * Retrieves the username of the currently authenticated user.
      *
-     * @return String 用户账号
+     * @return the username as a {@link String}, or {@code null} if not available
      */
     public static String getUsername() {
         return getUser().map(SysUserDetails::getUsername).orElse(null);
     }
 
-
     /**
-     * 获取部门ID
+     * Retrieves the department ID of the currently authenticated user.
      *
-     * @return Long
+     * @return the department ID as a {@link Long}, or {@code null} if not available
      */
     public static Long getDeptId() {
         return getUser().map(SysUserDetails::getDeptId).orElse(null);
     }
 
     /**
-     * 获取数据权限范围
+     * Retrieves the data scope of the currently authenticated user.
      *
-     * @return Integer
+     * @return the data scope as an {@link Integer}, or {@code null} if not
+     *         available
      */
     public static Integer getDataScope() {
         return getUser().map(SysUserDetails::getDataScope).orElse(null);
     }
 
-
     /**
-     * 获取角色集合
+     * Retrieves the set of role names assigned to the currently authenticated user.
+     * <p>
+     * Only authorities with the {@code ROLE_} prefix are considered as roles.
+     * The prefix is removed in the returned set.
+     * </p>
      *
-     * @return 角色集合
+     * @return a set of role names without the {@code ROLE_} prefix; never
+     *         {@code null}
      */
     public static Set<String> getRoles() {
         return Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
@@ -95,16 +113,56 @@ public class SecurityUtils {
                 .stream()
                 .flatMap(Collection::stream)
                 .map(GrantedAuthority::getAuthority)
-                // 筛选角色,authorities 中的角色都是以 ROLE_ 开头
                 .filter(authority -> authority.startsWith(SecurityConstants.ROLE_PREFIX))
                 .map(authority -> StrUtil.removePrefix(authority, SecurityConstants.ROLE_PREFIX))
                 .collect(Collectors.toSet());
     }
 
     /**
-     * 是否超级管理员
+     * Retrieves the set of role codes assigned to the currently authenticated user.
      * <p>
-     * 超级管理员忽视任何权限判断
+     * Only authorities with the {@code ROLE_} prefix are considered as roles. The
+     * prefix is removed
+     * and the remaining string is treated as the role code (corresponding to the
+     * {@code code} field in the role entity).
+     * </p>
+     *
+     * @return a set of role codes; never {@code null}
+     */
+    public static Set<String> getRoleCodes() {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return Collections.emptySet();
+        }
+
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+        if (CollectionUtil.isEmpty(authorities)) {
+            return Collections.emptySet();
+        }
+
+        Set<String> roleCodes = new HashSet<>();
+        for (GrantedAuthority authority : authorities) {
+            String authorityName = authority.getAuthority();
+            // 只處理角色權限（以 ROLE_ 開頭）
+            if (authorityName.startsWith(SecurityConstants.ROLE_PREFIX)) {
+                // 移除 ROLE_ 前綴，獲取角色代碼
+                String roleCode = StrUtil.removePrefix(authorityName, SecurityConstants.ROLE_PREFIX);
+                roleCodes.add(roleCode);
+            }
+        }
+
+        return roleCodes;
+    }
+
+    /**
+     * Determines whether the currently authenticated user is a super administrator.
+     * <p>
+     * Super administrators bypass all permission checks.
+     * </p>
+     *
+     * @return {@code true} if the user has the root role code; {@code false}
+     *         otherwise
      */
     public static boolean isRoot() {
         Set<String> roles = getRoles();
@@ -112,14 +170,16 @@ public class SecurityUtils {
     }
 
     /**
-     * 获取请求中的 Token
+     * Retrieves the authentication token from the current HTTP request's
+     * {@code Authorization} header.
      *
-     * @return Token 字符串
+     * @return the token string from the {@code Authorization} header, or
+     *         {@code null} if not present
      */
     public static String getTokenFromRequest() {
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+                .getRequest();
         return request.getHeader(HttpHeaders.AUTHORIZATION);
     }
-
 
 }

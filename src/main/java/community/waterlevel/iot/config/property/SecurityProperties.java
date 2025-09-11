@@ -9,12 +9,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * 安全模块配置属性类
- *
- * <p>映射 application.yml 中 security 前缀的安全相关配置</p>
+ * Configuration properties for the security module.
+ * Maps security-related settings from the application configuration (prefix "security"),
+ * including session management, whitelist paths, unsecured endpoints, and nested JWT/Redis token settings.
+ * Supports validation for required fields and value constraints.
  *
  * @author Ray.Hao
  * @since 2024/4/18
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Data
 @Component
@@ -23,89 +27,110 @@ import org.springframework.validation.annotation.Validated;
 public class SecurityProperties {
 
     /**
-     * 会话管理配置
+     * Session management configuration.
      */
     private SessionConfig session;
 
     /**
-     * 安全白名单路径（完全绕过安全过滤器）
-     * <p>示例值：/api/v1/auth/login/**, /ws/**
+     * Security whitelist paths (completely bypass security filters).
+     * <p>
+     * Example: {@code /api/v1/auth/login/**}, {@code /ws/**}
+     * </p>
      */
     @NotEmpty
     private String[] ignoreUrls;
 
     /**
-     * 非安全端点路径（允许匿名访问的API）
-     * <p>示例值：/doc.html, /v3/api-docs/**
+     * Non-secure endpoint paths (APIs allowed for anonymous access).
+     * <p>
+     * Example: {@code /doc.html}, {@code /v3/api-docs/**}
+     * </p>
      */
     @NotEmpty
     private String[] unsecuredUrls;
 
     /**
-     * 会话配置嵌套类
+     * Session configuration nested class.
      */
     @Data
     public static class SessionConfig {
         /**
-         * 认证策略类型
+         * Authentication strategy type.
          * <ul>
-         *   <li>jwt - 基于JWT的无状态认证</li>
-         *   <li>redis-token - 基于Redis的有状态认证</li>
+         * <li>{@code jwt} - Stateless authentication based on JWT</li>
+         * <li>{@code redis-token} - Stateful authentication based on Redis</li>
          * </ul>
          */
         @NotNull
         private String type;
 
         /**
-         * 访问令牌有效期（单位：秒）
-         * <p>默认值：3600（1小时）</p>
-         * <p>-1 表示永不过期</p>
+         * Access token validity period (in seconds).
+         * <p>
+         * Default: 3600 (1 hour)
+         * </p>
+         * <p>
+         * -1 means never expires
+         * </p>
          */
         @Min(-1)
         private Integer accessTokenTimeToLive = 3600;
 
         /**
-         * 刷新令牌有效期（单位：秒）
-         * <p>默认值：604800（7天）</p>
-         * <p>-1 表示永不过期</p>
+         * Refresh token validity period (in seconds).
+         * <p>
+         * Default: 604800 (7 days)
+         * </p>
+         * <p>
+         * -1 means never expires
+         * </p>
          */
         @Min(-1)
         private Integer refreshTokenTimeToLive = 604800;
 
         /**
-         * JWT 配置项
+         * JWT configuration options.
          */
         private JwtConfig jwt;
 
         /**
-         * Redis令牌配置项
+         * Redis token configuration options.
          */
         private RedisTokenConfig redisToken;
     }
 
     /**
-     * JWT 配置嵌套类
+     * JWT configuration nested class.
      */
     @Data
     public static class JwtConfig {
         /**
-         * JWT签名密钥
-         * <p>HS256算法要求至少32个字符</p>
-         * <p>示例：SecretKey012345678901234567890123456789</p>
+         * JWT signing secret key.
+         * <p>
+         * HS256 algorithm requires at least 32 characters.
+         * </p>
+         * <p>
+         * Example: {@code SecretKey012345678901234567890123456789}
+         * </p>
          */
         @NotNull
         private String secretKey;
     }
 
     /**
-     * Redis令牌配置嵌套类
+     * Redis token configuration nested class.
      */
     @Data
     public static class RedisTokenConfig {
         /**
-         * 是否允许多设备同时登录
-         * <p>true - 允许同一账户多设备登录（默认）</p>
-         * <p>false - 新登录会使旧令牌失效</p>
+         * Whether to allow multiple devices to log in simultaneously with the same
+         * account.
+         * <p>
+         * {@code true} - Allows multi-device login for the same account (default).
+         * </p>
+         * <p>
+         * {@code false} - New login will invalidate the old token.
+         * </p>
          */
         private Boolean allowMultiLogin = true;
     }

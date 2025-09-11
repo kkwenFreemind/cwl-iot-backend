@@ -14,34 +14,52 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * 统一处理 Spring Security 认证失败响应
+ * Custom authentication entry point for handling authentication failures in Spring Security.
+ * Sends standardized JSON error responses for invalid credentials, missing or invalid tokens,
+ * and other authentication-related exceptions.
  *
  * @author Ray.Hao
  * @since 2.0.0
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 public class MyAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     /**
-     * 认证失败处理入口方法
+     * Entry point for handling authentication failures.
+     * <p>
+     * Returns a standardized error response based on the type of authentication
+     * exception encountered.
+     * </p>
      *
-     * @param request 触发异常的请求对象（可用于获取请求头、参数等）
-     * @param response 响应对象（用于写入错误信息）
-     * @param authException 认证异常对象（包含具体失败原因）
+     * @param request       the HTTP servlet request that triggered the exception
+     *                      (can be used to access headers, parameters, etc.)
+     * @param response      the HTTP servlet response (used to write error
+     *                      information)
+     * @param authException the authentication exception containing the specific
+     *                      failure reason
+     * @throws IOException      if an input or output error occurs
+     * @throws ServletException if a servlet error occurs
      */
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
+    public void commence(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationException authException) throws IOException, ServletException {
         if (authException instanceof BadCredentialsException) {
-            // 用户名或密码错误
+            // Username or password is incorrect
             ResponseUtils.writeErrMsg(response, ResultCode.USER_PASSWORD_ERROR);
-        } else if(authException instanceof InsufficientAuthenticationException){
-            // 请求头缺失Authorization、Token格式错误、Token过期、签名验证失败
+        } else if (authException instanceof InsufficientAuthenticationException) {
+            // Missing Authorization header, invalid token format, expired token, or
+            // signature verification failed
             ResponseUtils.writeErrMsg(response, ResultCode.ACCESS_TOKEN_INVALID);
         } else {
-            // 其他未明确处理的认证异常（如账户被锁定、账户禁用等）
+            // Other unhandled authentication exceptions (e.g., account locked, account
+            // disabled, etc.)
             ResponseUtils.writeErrMsg(response, ResultCode.USER_LOGIN_EXCEPTION, authException.getMessage());
         }
     }
 }
+
 
 
 

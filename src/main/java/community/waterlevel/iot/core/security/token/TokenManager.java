@@ -1,69 +1,75 @@
 package community.waterlevel.iot.core.security.token;
 
-
 import org.springframework.security.core.Authentication;
-
 import community.waterlevel.iot.core.security.model.AuthenticationToken;
 
 /**
- *  Token 管理器
- *  <p>
- *  用于生成、解析、校验、刷新 Token
+ * TokenManager defines the contract for managing authentication tokens in the
+ * security module.
+ * <p>
+ * Implementations of this interface provide methods to generate, parse,
+ * validate, refresh, and invalidate tokens for user authentication and session
+ * management.
+ * It supports both access and refresh tokens, and can be implemented using
+ * different storage or token strategies (e.g., JWT, Redis).
  *
  * @author Ray.Hao
  * @since 2.16.0
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 public interface TokenManager {
 
     /**
-     * 生成认证 Token
+     * Generates an authentication token for the given authentication information.
      *
-     * @param authentication 用户认证信息
-     * @return 认证 Token 响应
+     * @param authentication the user authentication information
+     * @return the authentication token response
      */
     AuthenticationToken generateToken(Authentication authentication);
 
     /**
-     * 解析 Token 获取认证信息
+     * Parses the token and retrieves the corresponding authentication information.
      *
-     * @param token  Token
-     * @return 用户认证信息
+     * @param token the token string
+     * @return the user authentication information
      */
     Authentication parseToken(String token);
 
     /**
-     * 校验 Token 是否有效
+     * Validates whether the given token is valid.
      *
-     * @param token JWT Token
-     * @return 是否有效
+     * @param token the JWT token string
+     * @return {@code true} if the token is valid; {@code false} otherwise
      */
     boolean validateToken(String token);
 
     /**
-     * 校验 刷新 Token 是否有效
+     * Validates whether the given refresh token is valid.
      *
-     * @param refreshToken JWT Token
-     * @return 是否有效
+     * @param refreshToken the JWT refresh token string
+     * @return {@code true} if the refresh token is valid; {@code false} otherwise
      */
     boolean validateRefreshToken(String refreshToken);
 
     /**
-     *  刷新 Token
+     * Refreshes the access token using the given refresh token.
      *
-     * @param token 刷新令牌
-     * @return 认证 Token 响应
+     * @param token the refresh token string
+     * @return the authentication token response
      */
     AuthenticationToken refreshToken(String token);
 
     /**
-     * 令 Token 失效
+     * Invalidates the given token, making it unusable for future authentication.
      *
-     * @param token JWT Token
+     * @param token the JWT token string
      */
     default void invalidateToken(String token) {
-        // 默认实现可以是空的，或者抛出不支持的操作异常
+        // Default implementation can be empty or throw an unsupported operation
+        // exception
         // throw new UnsupportedOperationException("Not implemented");
     }
-
 
 }

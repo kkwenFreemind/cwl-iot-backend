@@ -16,16 +16,33 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 /**
- * IP工具类
+ * Utility class for IP address operations.
  * <p>
- * 获取客户端IP地址和IP地址对应的地理位置信息
- * <p>
- * 使用Nginx等反向代理软件， 则不能通过request.getRemoteAddr()获取IP地址
- * 如果使用了多级反向代理的话，X-Forwarded-For的值并不止一个，而是一串IP地址，X-Forwarded-For中第一个非unknown的有效IP字符串，则为真实IP地址
- * </p>
+ * Provides methods to obtain the client's real IP address and its corresponding
+ * geographic location.
+ * <ul>
+ * <li>Handles scenarios with reverse proxies (e.g., Nginx), where
+ * {@code request.getRemoteAddr()} may not return the real client IP.</li>
+ * <li>If multiple reverse proxies are used, the {@code X-Forwarded-For} header
+ * may contain a list of IPs; the first non-unknown valid IP is considered the
+ * real client IP.</li>
+ * <li>Supports IP-to-region lookup using the ip2region database.</li>
+ * </ul>
+ * 
+ * <b>Note:</b> The ip2region database is primarily designed for IP-to-region
+ * mapping within China.
+ * It provides detailed region information for Chinese IP addresses (province,
+ * city, ISP, etc.),
+ * but for IPs outside China, the data is often less detailed or may only
+ * indicate "foreign" or "overseas."
+ * If you need accurate global IP geolocation, consider integrating a more
+ * comprehensive international IP database or service.
  *
  * @author Ray
  * @since 2.10.0
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11
  */
 @Slf4j
 @Component
@@ -34,20 +51,24 @@ public class IPUtils {
     private static final String DB_PATH = "/data/ip2region.xdb";
     private static Searcher searcher;
 
+    /**
+     * Initializes the ip2region Searcher instance from the resource database file.
+     * <p>
+     * Loads the ip2region.xdb file from the classpath, copies it to a temporary
+     * file, and initializes the Searcher for IP-to-region lookups.
+     * Logs an error if initialization fails.
+     */
     @PostConstruct
     public void init() {
         try {
-            // 从类路径加载资源文件
             InputStream inputStream = getClass().getResourceAsStream(DB_PATH);
             if (inputStream == null) {
                 throw new FileNotFoundException("Resource not found: " + DB_PATH);
             }
 
-            // 将资源文件复制到临时文件
             Path tempDbPath = Files.createTempFile("ip2region", ".xdb");
             Files.copy(inputStream, tempDbPath, StandardCopyOption.REPLACE_EXISTING);
 
-            // 使用临时文件初始化 Searcher 对象
             searcher = Searcher.newWithFileOnly(tempDbPath.toString());
         } catch (Exception e) {
             log.error("IpRegionUtil initialization ERROR, {}", e.getMessage());
@@ -55,10 +76,15 @@ public class IPUtils {
     }
 
     /**
-     * 获取IP地址
+     * Retrieves the real client IP address from the given HTTP request.
+     * <p>
+     * Handles multiple reverse proxy headers to extract the first valid,
+     * non-unknown IP address.
+     * If the request is from localhost, attempts to resolve the actual local IP
+     * address.
      *
-     * @param request HttpServletRequest对象
-     * @return 客户端IP地址
+     * @param request the {@link HttpServletRequest} object
+     * @return the client's real IP address, or an empty string if unavailable
      */
     public static String getIpAddr(HttpServletRequest request) {
         String ip = null;
@@ -104,9 +130,9 @@ public class IPUtils {
     }
 
     /**
-     * 获取本机的IP地址
+     * Retrieves the local machine's IP address.
      *
-     * @return 本机IP地址
+     * @return the local IP address, or {@code null} if it cannot be determined
      */
     private static String getLocalAddr() {
         try {
@@ -118,10 +144,12 @@ public class IPUtils {
     }
 
     /**
-     * 根据IP地址获取地理位置信息
+     * Gets the geographic region information for the specified IP address using the
+     * ip2region database.
      *
-     * @param ip IP地址
-     * @return 地理位置信息
+     * @param ip the IP address to look up
+     * @return the geographic region information, or {@code null} if not found or on
+     *         error
      */
     public static String getRegion(String ip) {
         if (searcher == null) {

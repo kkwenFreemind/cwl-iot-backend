@@ -14,10 +14,16 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
 /**
- * Redis 缓存配置
+ * Configuration class for Redis cache integration.
+ * Customizes the {@link RedisCacheManager} and {@link RedisCacheConfiguration},
+ * including serialization strategies, TTL, null value handling, and key prefixing.
+ * Enables caching support and binds cache properties from the application configuration.
  *
  * @author Ray.Hao
  * @since 2023/12/4
+ * 
+ * @author Chang Xiu-Wen, AI-Enhanced
+ * @since 2025/09/11 
  */
 @EnableCaching
 @EnableConfigurationProperties(CacheProperties.class)
