@@ -181,19 +181,18 @@ public class SecurityConfig {
     }
 
     /**
-     * Configures the authentication manager with custom authentication providers.
+     * Configures the authentication manager with the password authentication provider.
      * <p>
-     * Combines the default password and SMS authentication providers into a single
-     * authentication manager.
+     * Creates an authentication manager with the default DAO-based password authentication.
+     * The IoT system currently supports only username/password authentication.
      *
      * @param daoAuthenticationProvider the password authentication provider
-     * @param smsAuthenticationProvider the SMS authentication provider
      * @return the configured {@link AuthenticationManager}
      */
     @Bean
     public AuthenticationManager authenticationManager(
             DaoAuthenticationProvider daoAuthenticationProvider) {
-        // Create a list of providers, adding only non-null providers
+        // Create a list with the password authentication provider
         java.util.List<org.springframework.security.authentication.AuthenticationProvider> providers = new java.util.ArrayList<>();
         providers.add(daoAuthenticationProvider);
 

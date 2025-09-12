@@ -52,7 +52,7 @@ security:
       allow-multi-login: true # Allow multi-device login
   # Security whitelist paths, only skip AuthorizationFilter, still go through other Spring Security filters (CSRF, CORS, etc.)
   ignore-urls:
-    - /api/v1/auth/login/**       # Login interfaces (username/password, SMS verification, WeChat login)
+    - /api/v1/auth/login/**       # Login interfaces (username/password authentication)
     - /api/v1/auth/captcha        # Captcha generation interface
     - /api/v1/auth/refresh-token  # Refresh token interface
     - /api/v1/auth/logout         # Logout interface

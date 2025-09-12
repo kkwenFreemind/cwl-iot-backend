@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import community.waterlevel.iot.core.security.util.SecurityUtils;
 import community.waterlevel.iot.system.model.entity.NoticeJpa;
+import community.waterlevel.iot.system.model.entity.UserJpa;
 import community.waterlevel.iot.system.enums.NoticePublishStatusEnum;
 import community.waterlevel.iot.system.model.form.NoticeForm;
 import community.waterlevel.iot.system.model.query.NoticePageQuery;
@@ -17,6 +18,7 @@ import community.waterlevel.iot.system.repository.NoticeJpaRepository;
 import community.waterlevel.iot.system.service.NoticeJpaService;
 import community.waterlevel.iot.system.service.SystemNoticeJpaService;
 import community.waterlevel.iot.system.service.SystemUserNoticeService;
+import community.waterlevel.iot.system.service.UserJpaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,6 +55,7 @@ public class NoticeJpaServiceImpl implements NoticeJpaService, SystemNoticeJpaSe
 
     private final NoticeJpaRepository noticeJpaRepository;
     private final SystemUserNoticeService userNoticeService;
+    private final UserJpaService userJpaService;
 
     /**
      * Retrieves a paginated list of notifications and announcements based on query parameters.
@@ -319,6 +322,30 @@ public class NoticeJpaServiceImpl implements NoticeJpaService, SystemNoticeJpaSe
         vo.setPublishStatus(entity.getPublishStatus());
         vo.setPublishTime(entity.getPublishTime());
         vo.setCreateTime(entity.getCreateTime());
+        vo.setRevokeTime(entity.getRevokeTime());
+        
+        // Set publisher name by querying user information
+        log.debug("Processing notice ID: {}, publisherId: {}", entity.getId(), entity.getPublisherId());
+        if (entity.getPublisherId() != null) {
+            try {
+                UserJpa publisher = userJpaService.getById(entity.getPublisherId());
+                log.debug("Found publisher: {}", publisher != null ? publisher.getUsername() : "null");
+                if (publisher != null) {
+                    String publisherName = publisher.getNickname() != null ? publisher.getNickname() : publisher.getUsername();
+                    vo.setPublisherName(publisherName);
+                    log.debug("Set publisherName to: {}", publisherName);
+                } else {
+                    log.warn("Publisher not found for publisherId: {}", entity.getPublisherId());
+                    vo.setPublisherName("Unknown");
+                }
+            } catch (Exception e) {
+                log.warn("Failed to get publisher name for publisherId: {}", entity.getPublisherId(), e);
+                vo.setPublisherName("Unknown");
+            }
+        } else {
+            log.warn("PublisherId is null for notice ID: {}", entity.getId());
+        }
+        
         return vo;
     }
 

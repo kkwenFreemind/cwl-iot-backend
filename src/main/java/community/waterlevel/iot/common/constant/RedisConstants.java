@@ -76,26 +76,6 @@ public interface RedisConstants {
          * Format: captcha:image:{uuid}
          */
         String IMAGE_CODE = "captcha:image:{}";
-        /**
-         * Key for SMS login verification code.
-         * Format: captcha:sms_login:{mobile}
-         */
-        String SMS_LOGIN_CODE = "captcha:sms_login:{}";
-        /**
-         * Key for SMS registration verification code.
-         * Format: captcha:sms_register:{mobile}
-         */
-        String SMS_REGISTER_CODE = "captcha:sms_register:{}";
-        /**
-         * Key for mobile verification code.
-         * Format: captcha:mobile:{mobile}
-         */
-        String MOBILE_CODE = "captcha:mobile:{}";
-        /**
-         * Key for email verification code.
-         * Format: captcha:email:{email}
-         */
-        String EMAIL_CODE = "captcha:email:{}";
     }
 
     /**

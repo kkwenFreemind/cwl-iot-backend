@@ -86,14 +86,6 @@ public enum ResultCode implements IResultCode {
      */
     VERIFICATION_CODE_INPUT_ERROR("A0130", "Verification code input error"),
     /**
-     * SMS verification code input error.
-     */
-    SMS_VERIFICATION_CODE_INPUT_ERROR("A0131", "SMS verification code input error"),
-    /**
-     * Email verification code input error.
-     */
-    EMAIL_VERIFICATION_CODE_INPUT_ERROR("A0132", "Email verification code input error"),
-    /**
      * Voice verification code input error.
      */
     VOICE_VERIFICATION_CODE_INPUT_ERROR("A0133", "Voice verification code input error"),
@@ -123,10 +115,6 @@ public enum ResultCode implements IResultCode {
      * Address format verification failed.
      */
     ADDRESS_FORMAT_VERIFICATION_FAILED("A0152", "Address format verification failed"),
-    /**
-     * Email format verification failed.
-     */
-    EMAIL_FORMAT_VERIFICATION_FAILED("A0153", "Email format verification failed"),
 
     /**
      * User login exception (secondary macro code).
@@ -721,17 +709,9 @@ public enum ResultCode implements IResultCode {
      */
     NOTIFICATION_SERVICE_ERROR("C0500", "Notification service error"),
     /**
-     * SMS reminder service failed.
-     */
-    SMS_REMINDER_SERVICE_FAILED("C0501", "SMS reminder service failed"),
-    /**
      * Voice reminder service failed.
      */
-    VOICE_REMINDER_SERVICE_FAILED("C0502", "Voice reminder service failed"),
-    /**
-     * Email reminder service failed.
-     */
-    EMAIL_REMINDER_SERVICE_FAILED("C0503", "Email reminder service failed");
+    VOICE_REMINDER_SERVICE_FAILED("C0502", "Voice reminder service failed");
 
     /**
      * Returns the response code string.
