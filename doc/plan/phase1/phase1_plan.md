@@ -1,4 +1,13 @@
-# Phase 1: Project Architecture Optimization - Detailed Plan
+# Phase 1: Project **🟡 Task Group 1.5 IN PROGRESS (2025-09-12)**
+
+- API validation and verification in progress
+- Profile API field completion issue discovered and fixed
+- Dictionary API database schema issue discovered and fixed
+- User import/export functionality cleanup completed
+- **Data permission control system implemented and verified** ✅
+- Comprehensive API testing underway
+
+**📊 Progress Summary**: 6/13 tasks complete (46.2%)cture Optimization - Detailed Plan
 
 > **Phase**: Phase 1  
 > **Status**: 🟡 In Progress - Task Group 1 Complete ✅  
@@ -139,6 +148,43 @@
     - Removed duplicate `isDeleted` field from `DictItemJpa` and `DictJpa` entities
     - Created `migration_add_is_deleted_to_dict_items.sql` for database schema update
   - **Verification**: Dictionary API (`/api/v1/dicts/gender/items`) now working correctly
+
+- [x] **Completed 2025-09-12**: User import/export functionality removal
+  - **Task**: Remove unused user import/export API endpoints and supporting code
+  - **APIs Removed**:
+    - `GET /api/v1/users/template` (Download user import template)
+    - `POST /api/v1/users/import` (Import users)
+    - `GET /api/v1/users/export` (Export users)
+  - **Files Removed**:
+    - `UserImportDTO.java` - Import data transfer object
+    - `UserExportDTO.java` - Export data transfer object
+    - `UserImportListener.java` - Excel import event listener
+  - **Code Changes**:
+    - Removed `listExportUsers()` method from `UserJpaService` interface
+    - Removed corresponding implementation from `UserJpaServiceImpl`
+    - Cleaned up import-related dependencies in `UserJpaConverter`
+    - Updated class documentation to reflect current capabilities
+  - **Verification**: Project compiles successfully with `mvn clean compile`
+
+- [x] **Completed 2025-09-12**: Data permission control implementation
+  - **Task**: Implement department-based data access control for multi-tenant IoT system
+  - **Business Requirement**: Community administrators should only access their community's data
+  - **Technical Implementation**:
+    - Enhanced `UserJpaServiceImpl.getUserPage()` with data permission filtering
+    - Added `applyDataPermissionFilter()` method implementing DataScopeEnum logic
+    - Extended `DeptJpaRepository` with `findByTreePathContaining()` for hierarchical department queries
+    - Integrated with existing SecurityUtils and role-based access control
+  - **Data Permission Levels**:
+    - `ALL(1)` - System Administrator: Full access to all data
+    - `DEPT_AND_SUB(2)` - Department and sub-department data access
+    - `DEPT(3)` - Community Admin: Department-only data access ✅ (CWL-IoT Standard)
+    - `SELF(4)` - Community User: Personal data only
+  - **Files Modified**:
+    - `UserJpaServiceImpl.java` - Added data permission filtering logic
+    - `DeptJpaRepository.java` - Added hierarchical department query method
+    - `.ai-context/README.md` - Added data permission control principles and patterns
+  - **Verification**: Successfully tested with admin_a user showing only Community_A users
+  - **Impact**: Establishes foundation for multi-tenant data isolation across entire IoT system
 
 ### Task Group 2: Configuration Management
 
@@ -303,4 +349,4 @@
 ---
 
 **Created**: 2025-09-10  
-**Last Updated**: 2025-09-10
+**Last Updated**: 2025-09-12

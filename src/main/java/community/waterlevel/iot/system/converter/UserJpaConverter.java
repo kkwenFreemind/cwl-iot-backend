@@ -7,7 +7,6 @@ import community.waterlevel.iot.system.model.vo.UserPageVO;
 import community.waterlevel.iot.system.model.vo.UserProfileVO;
 import community.waterlevel.iot.system.model.bo.UserBO;
 import community.waterlevel.iot.system.model.form.UserForm;
-import community.waterlevel.iot.system.model.dto.UserImportDTO;
 import community.waterlevel.iot.system.model.form.UserProfileForm;
 import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
@@ -22,7 +21,7 @@ import java.util.List;
  * <p>
  * It defines methods for converting between {@link UserJpa}, {@link UserForm},
  * {@link UserProfileForm}, {@link UserPageVO}, {@link CurrentUserDTO},
- * {@link UserImportDTO}, and {@link Option}, supporting the mapping of data
+ * and {@link Option}, supporting the mapping of data
  * across different layers of the application.
  * <p>
  * Used to simplify and standardize object transformations in the user
@@ -105,29 +104,6 @@ public interface UserJpaConverter {
                         @Mapping(target = "perms", ignore = true)
         })
         CurrentUserDTO toCurrentUserDTO(UserJpa entity);
-
-        /**
-         * Converts a UserImportDTO to a UserJpa entity for user import functionality.
-         * Ignores all system-managed fields during import process.
-         *
-         * @param dto the user import DTO
-         * @return the user entity
-         */
-        @Mappings({
-                        @Mapping(target = "id", ignore = true),
-                        @Mapping(target = "createTime", ignore = true),
-                        @Mapping(target = "updateTime", ignore = true),
-                        @Mapping(target = "createBy", ignore = true),
-                        @Mapping(target = "updateBy", ignore = true),
-                        @Mapping(target = "isDeleted", ignore = true),
-                        @Mapping(target = "password", ignore = true),
-                        @Mapping(target = "openid", ignore = true),
-                        @Mapping(target = "avatar", ignore = true),
-                        @Mapping(target = "deptId", ignore = true),
-                        @Mapping(target = "gender", ignore = true),
-                        @Mapping(target = "status", ignore = true)
-        })
-        UserJpa toEntity(UserImportDTO dto);
 
         /**
          * Converts a UserJpa entity to a UserBO (Business Object).

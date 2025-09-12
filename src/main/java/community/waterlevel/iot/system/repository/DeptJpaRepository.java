@@ -121,4 +121,14 @@ public interface DeptJpaRepository extends JpaRepository<DeptJpa, Long>, JpaSpec
      */
     @Query("SELECT d FROM DeptJpa d WHERE d.parentId = :parentId ORDER BY d.sort ASC")
     List<DeptJpa> findByParentIdOrderBySort(@Param("parentId") Long parentId);
+
+    /**
+     * Finds all departments whose tree path contains the specified pattern.
+     * Used for finding sub-departments in hierarchical data access control.
+     *
+     * @param treePath the tree path pattern to search for
+     * @return a list of departments whose tree path contains the pattern
+     */
+    @Query("SELECT d FROM DeptJpa d WHERE d.treePath LIKE :treePath")
+    List<DeptJpa> findByTreePathContaining(@Param("treePath") String treePath);
 }

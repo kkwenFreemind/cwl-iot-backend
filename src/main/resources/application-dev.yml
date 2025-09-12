@@ -13,52 +13,52 @@ spring:
       database: 0
       host: localhost
       port: 16379
-      # 如果Redis 服務未設定密碼，需要將password刪掉或註釋，而不是設定為空字串
+      # If Redis service has no password, delete or comment out password instead of setting empty string
       # password: 123456
       timeout: 10s
       lettuce:
         pool:
-          # 連線池最大連線數 預設8 ，負數表示沒有限制
+          # Maximum number of connections in pool (default: 8, negative means no limit)
           max-active: 8
-          # 連線池最大阻塞等待時間（使用負值表示沒有限制） 預設-1
+          # Maximum blocking wait time for pool (negative means no limit, default: -1)
           max-wait: -1
-          # 連線池中的最大空閒連線 預設8
+          # Maximum idle connections in pool (default: 8)
           max-idle: 8
-          # 連線池中的最小空閒連線 預設0
+          # Minimum idle connections in pool (default: 0)
           min-idle: 0
   cache:
     enabled: false
-    # 快取型別 redis、none(不使用快取)
+    # Cache type: redis, none (disable cache)
     type: redis
-    # 快取時間(單位：ms)
+    # Cache duration (unit: ms)
     redis:
       time-to-live: 3600000
-      # 快取null值，防止快取穿透
+      # Cache null values to prevent cache penetration
       cache-null-values: true
     caffeine:
       spec: initialCapacity=50,maximumSize=1000,expireAfterWrite=600s
 
 
 
-# 安全配置
+# Security Configuration
 security:
   session:
-    type: jwt # 會話方式 jwt/redis-token
-    access-token-time-to-live: 7200   # 訪問令牌 有效期(單位：秒)，預設 2 小時，-1 表示永不過期
-    refresh-token-time-to-live: 604800 # 重新整理令牌有效期(單位：秒)，預設 7 天，-1 表示永不過期
+    type: jwt # Session type: jwt/redis-token
+    access-token-time-to-live: 7200   # Access token validity (seconds), default 2 hours, -1 means never expire
+    refresh-token-time-to-live: 604800 # Refresh token validity (seconds), default 7 days, -1 means never expire
     jwt:
-      secret-key: SecretKey012345678901234567890123456789012345678901234567890123456789 # JWT金鑰(HS256演演算法至少32字元)
+      secret-key: SecretKey012345678901234567890123456789012345678901234567890123456789 # JWT secret key (HS256 algorithm requires at least 32 characters)
     redis-token:
-      allow-multi-login: true # 是否允許多裝置登入
-  # 安全白名單路徑，僅跳過 AuthorizationFilter 過濾器，還是會走 Spring Security 的其他過濾器(CSRF、CORS等)
+      allow-multi-login: true # Allow multi-device login
+  # Security whitelist paths, only skip AuthorizationFilter, still go through other Spring Security filters (CSRF, CORS, etc.)
   ignore-urls:
-    - /api/v1/auth/login/**       # 登入介面(賬號密碼登入、手機驗證碼登入和微信登入)
-    - /api/v1/auth/captcha        # 驗證碼獲取介面
-    - /api/v1/auth/refresh-token  # 重新整理令牌介面
-    - /api/v1/auth/logout         # 開放退出登入
-    - /api/v1/notices/**          # 通知公告介面 (臨時開放用於JPA測試)
-    - /ws/**                      # WebSocket介面
-  # 非安全端點路徑，完全繞過 Spring Security 的安全控制
+    - /api/v1/auth/login/**       # Login interfaces (username/password, SMS verification, WeChat login)
+    - /api/v1/auth/captcha        # Captcha generation interface
+    - /api/v1/auth/refresh-token  # Refresh token interface
+    - /api/v1/auth/logout         # Logout interface
+    - /api/v1/notices/**          # Notice announcement interface (temporarily open for JPA testing)
+    - /ws/**                      # WebSocket interface
+  # Unsecured endpoint paths, completely bypass Spring Security controls
   unsecured-urls:
     - ${springdoc.swagger-ui.path}
     - /doc.html
@@ -68,38 +68,28 @@ security:
     - /favicon.ico
 
 
-# 檔案儲存配置
+# File Storage Configuration
 oss:
-  # OSS 型別 (目前支援aliyun、minio、local)
+  # OSS type (currently supports aliyun, minio, local)
   type: minio
-  # MinIO 物件儲存服務
+  # MinIO Object Storage Service
   minio:
-    # MinIO 服務地址
+    # MinIO service endpoint
     endpoint: http://localhost:9000
-    # 訪問憑據
+    # Access credentials
     access-key: minioadmin
-    # 憑據金鑰
+    # Credentials secret key
     secret-key: minioadmin
-    # 儲存桶名稱
+    # Bucket name
     bucket-name: ccms
-    # (可選) 自定義域名：配置後，檔案 URL 會使用該域名格式
+    # (Optional) Custom domain: if configured, file URLs will use this domain format
     custom-domain:
-  # # 阿里雲OSS物件儲存服務
-  # aliyun:
-  #   # 服務Endpoint
-  #   endpoint: oss-cn-hangzhou.aliyuncs.com
-  #   # 訪問憑據`
-  #   access-key-id: your-access-key-id
-  #   # 憑據金鑰
-  #   access-key-secret: your-access-key-secret
-  #   # 儲存桶名稱
-  #   bucket-name: default
-  # # 本地儲存
+  # Local storage
   local:
-    # 檔案儲存路徑 請注意下，mac使用者請使用 /Users/your-username/your-path/，否則會有許可權問題，windows使用者請使用 D:/your-path/
+    # File storage path. Note: Mac users please use /Users/your-username/your-path/, otherwise permission issues may occur. Windows users please use D:/your-path/
     storage-path: /Users/theo/home/
 
-# springdoc配置： https://springdoc.org/properties.html
+# SpringDoc Configuration: https://springdoc.org/properties.html
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -108,7 +98,7 @@ springdoc:
   api-docs:
     path: /v3/api-docs
   group-configs:
-    - group: '系統管理'
+    - group: 'System Management'
       paths-to-match: "/**"
       packages-to-scan:
         - community.waterlevel.iot.auth.controller
@@ -119,33 +109,33 @@ springdoc:
 
 
 
-# 驗證碼配置
+# Captcha Configuration
 captcha:
-  # 驗證碼型別 circle-圓圈幹擾驗證碼|gif-Gif驗證碼|line-幹擾線驗證碼|shear-扭曲幹擾驗證碼
+  # Captcha type: circle-Circle interference captcha|gif-Gif captcha|line-Interference line captcha|shear-Distortion interference captcha
   type: circle
-  # 驗證碼寬度
+  # Captcha width
   width: 120
-  # 驗證碼高度
+  # Captcha height
   height: 40
-  # 驗證碼幹擾元素個數
+  # Number of captcha interference elements
   interfere-count: 2
-  # 文字透明度(0.0-1.0)
+  # Text transparency (0.0-1.0)
   text-alpha: 0.8
-  # 驗證碼字元配置
+  # Captcha character configuration
   code:
-    # 驗證碼字元型別 math-算術|random-隨機字元
+    # Captcha character type: math-arithmetic|random-random characters
     type: math
-    # 驗證碼字元長度，type=算術時，表示運算位數(1:個位數運算 2:十位數運算)；type=隨機字元時，表示字元個數
+    # Captcha character length. For type=arithmetic, represents operation digits (1: single digit operation, 2: double digit operation); For type=random characters, represents character count
     length: 1
-  # 驗證碼字型
+  # Captcha font configuration
   font:
-    # 字型名稱 Dialog|DialogInput|Monospaced|Serif|SansSerif
+    # Font name: Dialog|DialogInput|Monospaced|Serif|SansSerif
     name: SansSerif
-    # 字型樣式 0-普通|1-粗體|2-斜體
+    # Font style: 0-normal|1-bold|2-italic
     weight: 1
-    # 字型大小
+    # Font size
     size: 24
-  # 驗證碼有效期(秒)
+  # Captcha validity period (seconds)
   expire-seconds: 120
 
 

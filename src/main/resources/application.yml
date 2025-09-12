@@ -4,6 +4,5 @@ spring:
   profiles:
     active: dev
 
-# 在 banner.txt 中顯示專案版本，使用 @project.version@ 從 pom.xml 獲取
 project:
   version: @project.version@

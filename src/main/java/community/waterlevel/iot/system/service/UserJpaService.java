@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import community.waterlevel.iot.common.model.Option;
 import community.waterlevel.iot.core.security.model.UserAuthCredentials;
 import community.waterlevel.iot.system.model.dto.CurrentUserDTO;
-import community.waterlevel.iot.system.model.dto.UserExportDTO;
 import community.waterlevel.iot.system.model.entity.UserJpa;
 import community.waterlevel.iot.system.model.form.*;
 import community.waterlevel.iot.system.model.query.UserPageQuery;
@@ -79,14 +78,6 @@ public interface UserJpaService extends IService<UserJpa> {
      * @return the UserAuthCredentials object
      */
     UserAuthCredentials getAuthCredentialsByUsername(String username);
-
-    /**
-     * Lists users for export based on query parameters.
-     *
-     * @param queryParams the query parameters for filtering
-     * @return the list of UserExportDTO objects
-     */
-    List<UserExportDTO> listExportUsers(UserPageQuery queryParams);
 
     /**
      * Retrieves information about the current authenticated user.

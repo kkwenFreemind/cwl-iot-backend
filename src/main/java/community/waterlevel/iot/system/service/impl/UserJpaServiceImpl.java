@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import community.waterlevel.iot.common.constant.SystemConstants;
+import community.waterlevel.iot.common.enums.DataScopeEnum;
 import community.waterlevel.iot.common.exception.BusinessException;
 import community.waterlevel.iot.common.model.Option;
 import community.waterlevel.iot.core.security.model.UserAuthCredentials;
@@ -16,13 +17,13 @@ import community.waterlevel.iot.core.security.token.TokenManager;
 import community.waterlevel.iot.core.security.util.SecurityUtils;
 
 import community.waterlevel.iot.system.converter.UserJpaConverter;
+import community.waterlevel.iot.system.model.entity.DeptJpa;
 import community.waterlevel.iot.system.model.entity.RoleJpa;
 import community.waterlevel.iot.system.model.entity.UserJpa;
 import community.waterlevel.iot.system.model.entity.UserRoleJpa;
 import community.waterlevel.iot.system.enums.DictCodeEnum;
 import community.waterlevel.iot.system.model.bo.UserBO;
 import community.waterlevel.iot.system.model.dto.CurrentUserDTO;
-import community.waterlevel.iot.system.model.dto.UserExportDTO;
 
 import community.waterlevel.iot.system.model.form.*;
 import community.waterlevel.iot.system.model.query.UserPageQuery;
@@ -36,7 +37,9 @@ import community.waterlevel.iot.system.repository.UserRoleJpaRepository;
 import community.waterlevel.iot.system.service.RoleJpaService;
 import community.waterlevel.iot.system.service.SystemDictItemJpaService;
 import community.waterlevel.iot.system.service.UserJpaService;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
@@ -89,7 +92,11 @@ public class UserJpaServiceImpl implements UserJpaService {
 
     @Override
     /**
-     * Retrieves a paginated list of users based on query parameters.
+     * Retrieves a paginated list of users based on query parameters with data permission control.
+     * Applies data scope filtering based on the current user's role permissions:
+     * - System administrators can see all users
+     * - Community administrators can only see users in their department
+     * - Regular users can only see themselves
      *
      * @param queryParams the user page query parameters
      * @return a paginated list of user view objects
@@ -103,6 +110,8 @@ public class UserJpaServiceImpl implements UserJpaService {
 
         Specification<UserJpa> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
+            
+            // Apply basic query filters
             if (StrUtil.isNotBlank(queryParams.getKeywords())) {
                 String keywords = "%" + queryParams.getKeywords() + "%";
                 Predicate usernamePredicate = criteriaBuilder.like(root.get("username"), keywords);
@@ -117,6 +126,10 @@ public class UserJpaServiceImpl implements UserJpaService {
             if (queryParams.getDeptId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("deptId"), queryParams.getDeptId()));
             }
+            
+            // Apply data permission filtering
+            applyDataPermissionFilter(predicates, root, criteriaBuilder);
+            
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
 
@@ -272,67 +285,6 @@ public class UserJpaServiceImpl implements UserJpaService {
     }
 
    
-    @Override
-    /**
-     * Lists users for export based on query parameters.
-     *
-     * @param queryParams the user page query parameters
-     * @return a list of user export DTOs
-     */
-    public List<UserExportDTO> listExportUsers(UserPageQuery queryParams) {
-
-        Specification<UserJpa> spec = (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (StrUtil.isNotBlank(queryParams.getKeywords())) {
-                String keywords = "%" + queryParams.getKeywords() + "%";
-                Predicate usernamePredicate = criteriaBuilder.like(root.get("username"), keywords);
-                Predicate nicknamePredicate = criteriaBuilder.like(root.get("nickname"), keywords);
-                predicates.add(criteriaBuilder.or(usernamePredicate, nicknamePredicate));
-            }
-
-            if (queryParams.getStatus() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("status"), queryParams.getStatus()));
-            }
-
-            if (queryParams.getDeptId() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("deptId"), queryParams.getDeptId()));
-            }
-
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
-
-        List<UserJpa> users = userJpaRepository.findAll(spec);
-
-        List<UserExportDTO> exportUsers = users.stream()
-                .map(user -> {
-                    UserExportDTO dto = new UserExportDTO();
-                    dto.setUsername(user.getUsername());
-                    dto.setNickname(user.getNickname());
-                    dto.setMobile(user.getMobile());
-                    dto.setEmail(user.getEmail());
-                    dto.setGender(user.getGender() != null ? user.getGender().toString() : "");
-                    dto.setCreateTime(user.getCreateTime());
-                    return dto;
-                })
-                .collect(Collectors.toList());
-
-        if (CollectionUtil.isNotEmpty(exportUsers)) {
-            Map<String, String> genderMap = dictItemService.getDictItems(DictCodeEnum.GENDER.getValue())
-                    .stream()
-                    .collect(Collectors.toMap(dictItem -> dictItem.getValue(), dictItem -> dictItem.getLabel()));
-
-            exportUsers.forEach(item -> {
-                String gender = item.getGender();
-                if (StrUtil.isNotBlank(gender) && !genderMap.isEmpty()) {
-                    item.setGender(genderMap.get(gender));
-                }
-            });
-        }
-
-        return exportUsers;
-    }
-
     @Override
     /**
      * Retrieves information about the currently authenticated user.
@@ -939,5 +891,95 @@ public class UserJpaServiceImpl implements UserJpaService {
             credentials.setRoles(roleCodes);
         }
         return credentials;
+    }
+
+    /**
+     * Applies data permission filtering based on current user's role and data scope.
+     * Implements multi-level data access control for community water level IoT system:
+     * - ALL (1): System administrators can access all data
+     * - DEPT_AND_SUB (2): Can access department and sub-department data
+     * - DEPT (3): Community administrators can only access their department data
+     * - SELF (4): Regular users can only access their own data
+     *
+     * @param predicates the list of predicates to add filtering conditions
+     * @param root the root entity for building predicates
+     * @param criteriaBuilder the criteria builder for constructing queries
+     */
+    private void applyDataPermissionFilter(List<Predicate> predicates, 
+                                         Root<UserJpa> root, 
+                                         CriteriaBuilder criteriaBuilder) {
+        
+        // Skip filtering for super administrators (ROOT role)
+        if (SecurityUtils.isRoot()) {
+            return;
+        }
+
+        // Get current user's data scope from their roles
+        Set<String> roleCodes = SecurityUtils.getRoleCodes();
+        Integer dataScope = roleJpaService.getMaximumDataScope(roleCodes);
+        
+        if (dataScope == null) {
+            // If no data scope defined, default to self-only access
+            dataScope = DataScopeEnum.SELF.getValue();
+        }
+
+        Long currentUserId = SecurityUtils.getUserId();
+        Long currentUserDeptId = SecurityUtils.getDeptId();
+
+        switch (dataScope) {
+            case 1: // ALL - System administrators can see all data
+                // No additional filtering needed
+                break;
+                
+            case 2: // DEPT_AND_SUB - Department and sub-department data
+                if (currentUserDeptId != null) {
+                    // Get current department and all sub-departments
+                    List<Long> deptIds = getDeptAndSubDeptIds(currentUserDeptId);
+                    predicates.add(root.get("deptId").in(deptIds));
+                }
+                break;
+                
+            case 3: // DEPT - Department data only (Community Admin level)
+                if (currentUserDeptId != null) {
+                    predicates.add(criteriaBuilder.equal(root.get("deptId"), currentUserDeptId));
+                }
+                break;
+                
+            case 4: // SELF - Self data only (Regular users)
+                if (currentUserId != null) {
+                    predicates.add(criteriaBuilder.equal(root.get("id"), currentUserId));
+                }
+                break;
+                
+            default:
+                // Default to self-only access for unknown data scopes
+                if (currentUserId != null) {
+                    predicates.add(criteriaBuilder.equal(root.get("id"), currentUserId));
+                }
+        }
+    }
+
+    /**
+     * Retrieves department ID and all sub-department IDs for hierarchical data access.
+     * Used for DEPT_AND_SUB data scope to include data from current department and all sub-departments.
+     *
+     * @param deptId the parent department ID
+     * @return list of department IDs including parent and all children
+     */
+    private List<Long> getDeptAndSubDeptIds(Long deptId) {
+        List<Long> deptIds = new ArrayList<>();
+        deptIds.add(deptId);
+        
+        // Find all sub-departments using tree_path
+        String treePath = "%" + deptId + "%";
+        List<DeptJpa> subDepts = deptJpaRepository.findByTreePathContaining(treePath);
+        
+        List<Long> subDeptIds = subDepts.stream()
+                .map(DeptJpa::getId)
+                .filter(id -> !id.equals(deptId)) // Exclude the parent department itself
+                .collect(Collectors.toList());
+        
+        deptIds.addAll(subDeptIds);
+        return deptIds;
     }
 }
