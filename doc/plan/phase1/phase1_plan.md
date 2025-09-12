@@ -9,6 +9,7 @@
 ## 🎉 Milestone Achievement
 
 **✅ Task Group 1 COMPLETED (2025-09-11)**
+
 - Database layer fully migrated from MyBatis to Spring Data JPA
 - All entities, services, controllers, and repositories converted
 - Professional English JavaDoc documentation added
@@ -16,7 +17,13 @@
 - Unrelated modules cleaned up
 - All circular dependencies resolved
 
-**📊 Progress Summary**: 4/12 tasks complete (33.3%)
+**� Task Group 1.5 IN PROGRESS (2025-09-12)**
+
+- API validation and verification in progress
+- Profile API field completion issue discovered and fixed
+- Comprehensive API testing underway
+
+**�📊 Progress Summary**: 4.5/13 tasks complete (34.6%)
 
 ## 📋 Phase Overview
 
@@ -80,6 +87,58 @@
 - [x] Application successfully starts and runs
 - [x] All circular dependencies resolved
 - [x] Unrelated modules removed (member, order, product, codegen, mail, sms)
+
+### Task Group 1.5: API Validation & Verification
+
+**Estimated Duration**: 1 day
+
+#### Tasks 1.5.1 - 1.5.3
+
+- [x] **1.5.1**: User Management API Validation (2 hours)
+  - ✅ Profile API field completion (deptName, roleNames) - Fixed 2025-09-12
+  - [ ] User CRUD operations verification
+  - [ ] User authentication API testing
+  - [ ] Password management API testing
+
+- [x] **1.5.2**: System Management API Validation (4 hours)
+  - [ ] Role management API testing
+  - [ ] Menu management API testing
+  - [ ] Department management API testing
+  - [x] Dictionary management API testing - Fixed 2025-09-12
+  - [ ] Configuration management API testing
+
+- [ ] **1.5.3**: Notice & Log API Validation (2 hours)
+  - [ ] Notice management API testing
+  - [ ] User notice API testing
+  - [ ] System log API testing
+  - [ ] File upload/download API testing
+
+#### Acceptance Criteria 1.5.1 - 1.5.3
+
+- [ ] All API endpoints return correct data structure
+- [ ] All relational data (deptName, roleNames) properly populated
+- [ ] Pagination working correctly in all list APIs
+- [ ] Error handling working properly
+- [ ] Authentication and authorization working
+- [ ] All CRUD operations functional
+- [ ] Data consistency maintained across operations
+
+#### Known Issues & Fixes
+
+- [x] **Fixed 2025-09-12**: Profile API missing deptName and roleNames fields
+  - **Issue**: `getUserProfile` API returned null for deptName and roleNames
+  - **Root Cause**: Missing join queries to fetch department and role information
+  - **Solution**: Enhanced UserJpaServiceImpl.getUserProfile() to fetch related data
+  - **Verification**: API now returns complete user profile information
+
+- [x] **Fixed 2025-09-12**: Dictionary API database schema issue  
+  - **Issue**: `sys_dict_item` table missing `is_deleted` column causing SQL errors
+  - **Root Cause**: Database schema not updated after JPA entity migration
+  - **Solution**: Created and executed migration script to add missing `is_deleted` column
+  - **Files Changed**:
+    - Removed duplicate `isDeleted` field from `DictItemJpa` and `DictJpa` entities
+    - Created `migration_add_is_deleted_to_dict_items.sql` for database schema update
+  - **Verification**: Dictionary API (`/api/v1/dicts/gender/items`) now working correctly
 
 ### Task Group 2: Configuration Management
 
@@ -220,8 +279,9 @@
 
 ### Functional Completion
 
-- [ ] All packages renamed to IoT convention
+- [x] All packages renamed to IoT convention
 - [ ] Project structure optimized for IoT development
+- [ ] All APIs validated and working correctly
 - [ ] Environment configurations working
 - [ ] Development environment fully functional
 - [ ] Testing framework operational

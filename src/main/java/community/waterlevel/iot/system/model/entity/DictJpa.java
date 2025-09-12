@@ -58,10 +58,5 @@ public class DictJpa extends BaseJpaEntity {
     @Column(name = "remark", length = 500)
     private String remark;
 
-    /**
-     * Logical delete flag for soft delete functionality.
-     * 0 = Not deleted, 1 = Deleted. Default value is 0.
-     */
-    @Column(name = "is_deleted")
-    private Integer isDeleted = 0;
+    // Note: isDeleted field is inherited from BaseJpaEntity
 }

@@ -79,10 +79,5 @@ public class DictItemJpa extends BaseJpaEntity {
     @Column(name = "tag_type", length = 50)
     private String tagType;
 
-    /**
-     * Logical delete flag for soft delete functionality.
-     * 0 = Not deleted, 1 = Deleted. Default value is 0.
-     */
-    @Column(name = "is_deleted")
-    private Integer isDeleted = 0;
+    // Note: isDeleted field is inherited from BaseJpaEntity
 }

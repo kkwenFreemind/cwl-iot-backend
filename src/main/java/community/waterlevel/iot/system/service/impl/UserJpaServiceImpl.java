@@ -388,7 +388,25 @@ public class UserJpaServiceImpl implements UserJpaService {
 
         UserJpa user = userOpt.get();
         UserBO userBO = userJpaConverter.toBO(user);
-        return userJpaConverter.toProfileVO(userBO);
+        UserProfileVO profileVO = userJpaConverter.toProfileVO(userBO);
+        
+        // Set department name
+        if (user.getDeptId() != null) {
+            deptJpaRepository.findById(user.getDeptId())
+                    .ifPresent(dept -> profileVO.setDeptName(dept.getName()));
+        }
+        
+        // Set role names
+        List<Long> roleIds = userRoleJpaRepository.findRoleIdsByUserId(user.getId());
+        if (CollectionUtil.isNotEmpty(roleIds)) {
+            List<String> roleNames = roleJpaRepository.findAllById(roleIds)
+                    .stream()
+                    .map(role -> role.getName())
+                    .collect(Collectors.toList());
+            profileVO.setRoleNames(String.join(",", roleNames));
+        }
+        
+        return profileVO;
     }
 
     @Override
