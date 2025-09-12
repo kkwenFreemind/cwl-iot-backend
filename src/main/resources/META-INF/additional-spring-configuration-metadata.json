@@ -3,117 +3,122 @@
     {
       "name": "oss.type",
       "type": "java.lang.String",
-      "description": "OSS 类型 (目前支持aliyun、minio)"
+      "description": "OSS type (currently supports aliyun, minio, local)"
     },
     {
       "name": "oss.minio.endpoint",
       "type": "java.lang.String",
-      "description": "MinIO 服务 Endpoint"
+      "description": "MinIO service endpoint"
     },
     {
       "name": "oss.minio.access-key",
       "type": "java.lang.String",
-      "description": "MinIO 访问凭据"
+      "description": "MinIO access key"
     },
     {
       "name": "oss.minio.secret-key",
       "type": "java.lang.String",
-      "description": "MinIO 凭据密钥"
+      "description": "MinIO secret key"
     },
     {
       "name": "oss.minio.bucket-name",
       "type": "java.lang.String",
-      "description": "MinIO 存储桶名称"
+      "description": "MinIO bucket name"
     },
     {
       "name": "oss.minio.custom-domain",
       "type": "java.lang.String",
-      "description": "MinIO 自定义域名"
+      "description": "MinIO custom domain"
     },
     {
-      "name": "oss.aliyun.endpoint",
+      "name": "oss.local.storage-path",
       "type": "java.lang.String",
-      "description": "阿里云 OSS 服务 Endpoint"
-    },
-    {
-      "name": "oss.aliyun.access-key-id",
-      "type": "java.lang.String",
-      "description": "阿里云 OSS 访问凭据 ID"
-    },
-    {
-      "name": "oss.aliyun.access-key-secret",
-      "type": "java.lang.String",
-      "description": "阿里云 OSS 凭据密钥"
-    },
-    {
-      "name": "oss.aliyun.bucket-name",
-      "type": "java.lang.String",
-      "description": "阿里云 OSS 存储桶名称"
-    },
-    {
-      "name": "xxl.job.enabled",
-      "type": "java.lang.Boolean",
-      "description": "定时任务开关"
-    },
-    {
-      "name": "xxl.job.admin.addresses",
-      "type": "java.lang.String",
-      "description": "多个地址使用,分割"
-    },
-    {
-      "name": "xxl.job.accessToken",
-      "type": "java.lang.String",
-      "description": "访问令牌"
-    },
-    {
-      "name": "xxl.job.executor.appname",
-      "type": "java.lang.String",
-      "description": "执行器应用名称"
-    },
-    {
-      "name": "xxl.job.executor.address",
-      "type": "java.lang.String",
-      "description": "执行器地址"
-    },
-    {
-      "name": "xxl.job.executor.ip",
-      "type": "java.lang.String",
-      "description": "执行器IP"
-    },
-    {
-      "name": "xxl.job.executor.port",
-      "type": "java.lang.Integer",
-      "description": "执行器端口"
-    },
-    {
-      "name": "xxl.job.executor.logpath",
-      "type": "java.lang.String",
-      "description": "日志路径"
-    },
-    {
-      "name": "xxl.job.executor.logretentiondays",
-      "type": "java.lang.Integer",
-      "description": "日志保留天数"
+      "description": "Local file storage path"
     },
     {
       "name": "spring.cache.enabled",
       "type": "java.lang.Boolean",
-      "description": "缓存开关"
+      "description": "Cache enable/disable switch"
     },
     {
-      "name": "security.redis-token.multi-login",
+      "name": "security.session.type",
       "type": "java.lang.String",
-      "description": "是否允许多点登录"
+      "description": "Session management type (jwt/redis-token)"
     },
     {
-      "name": "security.redis-token.access-token-time-to-live",
-      "type": "java.lang.String",
-      "description": "访问令牌有效期"
+      "name": "security.session.access-token-time-to-live",
+      "type": "java.lang.Integer",
+      "description": "Access token time to live (seconds)"
     },
     {
-      "name": "security.redis-token.refresh-token-time-to-live",
+      "name": "security.session.refresh-token-time-to-live",
+      "type": "java.lang.Integer",
+      "description": "Refresh token time to live (seconds)"
+    },
+    {
+      "name": "security.session.jwt.secret-key",
       "type": "java.lang.String",
-      "description": "刷新令牌有效期"
+      "description": "JWT secret key (HS256 algorithm requires at least 32 characters)"
+    },
+    {
+      "name": "security.session.redis-token.allow-multi-login",
+      "type": "java.lang.Boolean",
+      "description": "Allow multi-device login"
+    },
+    {
+      "name": "captcha.type",
+      "type": "java.lang.String",
+      "description": "Captcha type (circle/gif/line/shear)"
+    },
+    {
+      "name": "captcha.width",
+      "type": "java.lang.Integer",
+      "description": "Captcha width"
+    },
+    {
+      "name": "captcha.height",
+      "type": "java.lang.Integer",
+      "description": "Captcha height"
+    },
+    {
+      "name": "captcha.interfere-count",
+      "type": "java.lang.Integer",
+      "description": "Captcha interference element count"
+    },
+    {
+      "name": "captcha.text-alpha",
+      "type": "java.lang.Double",
+      "description": "Captcha text transparency (0.0-1.0)"
+    },
+    {
+      "name": "captcha.code.type",
+      "type": "java.lang.String",
+      "description": "Captcha code type (math/random)"
+    },
+    {
+      "name": "captcha.code.length",
+      "type": "java.lang.Integer",
+      "description": "Captcha code length"
+    },
+    {
+      "name": "captcha.font.name",
+      "type": "java.lang.String",
+      "description": "Captcha font name"
+    },
+    {
+      "name": "captcha.font.weight",
+      "type": "java.lang.Integer",
+      "description": "Captcha font weight (0-normal/1-bold/2-italic)"
+    },
+    {
+      "name": "captcha.font.size",
+      "type": "java.lang.Integer",
+      "description": "Captcha font size"
+    },
+    {
+      "name": "captcha.expire-seconds",
+      "type": "java.lang.Integer",
+      "description": "Captcha expiration time (seconds)"
     }
   ]
 }
