@@ -61,9 +61,9 @@ public class LogAspect {
 
     /**
      * Pointcut for methods annotated with
-     * {@link com.youlai.boot.LogJpa.annotation.Log}.
+     * {@link community.waterlevel.iot.common.annotation.Log}.
      */
-    @Pointcut("@annotation(com.youlai.boot.common.annotation.Log)")
+    @Pointcut("@annotation(community.waterlevel.iot.common.annotation.Log)")
     public void logPointcut() {
     }
 

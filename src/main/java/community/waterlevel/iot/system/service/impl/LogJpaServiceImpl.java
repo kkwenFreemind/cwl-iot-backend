@@ -8,6 +8,7 @@ import community.waterlevel.iot.system.model.vo.LogPageVO;
 import community.waterlevel.iot.system.model.vo.VisitStatsVO;
 import community.waterlevel.iot.system.model.vo.VisitTrendVO;
 import community.waterlevel.iot.system.repository.LogJpaRepository;
+import community.waterlevel.iot.system.repository.UserJpaRepository;
 import community.waterlevel.iot.system.service.LogJpaService;
 import community.waterlevel.iot.system.service.SystemLogJpaService;
 import jakarta.persistence.criteria.Predicate;
@@ -51,6 +52,7 @@ import java.util.stream.Collectors;
 public class LogJpaServiceImpl implements LogJpaService, SystemLogJpaService {
 
     private final LogJpaRepository logJpaRepository;
+    private final UserJpaRepository userJpaRepository;
 
     /**
      * Saves a log record to the database. If the creation time is not set, it will
@@ -267,7 +269,9 @@ public class LogJpaServiceImpl implements LogJpaService, SystemLogJpaService {
 
         try {
             if (logJpa.getModule() != null) {
-                vo.setModule(LogModuleEnum.valueOf(logJpa.getModule()));
+                // Find enum by module name instead of enum name
+                LogModuleEnum moduleEnum = findModuleEnumByName(logJpa.getModule());
+                vo.setModule(moduleEnum);
             }
         } catch (IllegalArgumentException e) {
             vo.setModule(null);
@@ -296,7 +300,16 @@ public class LogJpaServiceImpl implements LogJpaService, SystemLogJpaService {
         vo.setCreateTime(logJpa.getCreateTime());
         vo.setCreateBy(logJpa.getCreateBy());
 
-        vo.setOperator("Unknown user");
+        // Set operator name based on createBy
+        if (logJpa.getCreateBy() != null) {
+            userJpaRepository.findById(logJpa.getCreateBy())
+                    .ifPresentOrElse(
+                            user -> vo.setOperator(user.getNickname() != null ? user.getNickname() : user.getUsername()),
+                            () -> vo.setOperator("Unknown user")
+                    );
+        } else {
+            vo.setOperator("System");
+        }
 
         return vo;
     }
@@ -326,5 +339,20 @@ public class LogJpaServiceImpl implements LogJpaService, SystemLogJpaService {
         } catch (Exception e) {
             throw new IllegalArgumentException("Unable to parse date string: " + dateStr, e);
         }
+    }
+
+    /**
+     * Find LogModuleEnum by module name.
+     * 
+     * @param moduleName the module name to search for
+     * @return the corresponding LogModuleEnum, or null if not found
+     */
+    private LogModuleEnum findModuleEnumByName(String moduleName) {
+        for (LogModuleEnum moduleEnum : LogModuleEnum.values()) {
+            if (moduleEnum.getModuleName().equals(moduleName)) {
+                return moduleEnum;
+            }
+        }
+        return null;
     }
 }
