@@ -6,6 +6,7 @@ import community.waterlevel.iot.common.model.Option;
 import community.waterlevel.iot.system.model.form.DeptForm;
 import community.waterlevel.iot.system.model.query.DeptQuery;
 import community.waterlevel.iot.system.model.vo.DeptVO;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
 
@@ -36,10 +37,12 @@ public interface DeptJpaService extends IService<DeptJpa> {
 
     /**
      * Retrieves a list of department options for selection components.
+     * Data permission filtering is automatically applied based on user roles.
      *
+     * @param specification optional specification for additional filtering
      * @return a list of department options with IDs
      */
-    List<Option<Long>> listDeptOptions();
+    List<Option<Long>> listDeptOptions(Specification<DeptJpa> specification);
 
     /**
      * Saves a new department record.

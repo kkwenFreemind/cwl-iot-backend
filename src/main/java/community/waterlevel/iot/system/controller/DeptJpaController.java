@@ -2,6 +2,7 @@ package community.waterlevel.iot.system.controller;
 
 import community.waterlevel.iot.common.model.Option;
 import community.waterlevel.iot.common.result.Result;
+import community.waterlevel.iot.system.model.entity.DeptJpa;
 import community.waterlevel.iot.system.model.form.DeptForm;
 import community.waterlevel.iot.system.model.query.DeptQuery;
 import community.waterlevel.iot.system.model.vo.DeptVO;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -67,7 +69,9 @@ public class DeptJpaController {
     @Operation(summary = "Get department dropdown options.")
     @GetMapping("/options")
     public Result<List<Option<Long>>> listDeptOptions() {
-        List<Option<Long>> list = deptJpaService.listDeptOptions();
+        // Pass an empty Specification to enable AOP data permission filtering
+        Specification<DeptJpa> emptySpec = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
+        List<Option<Long>> list = deptJpaService.listDeptOptions(emptySpec);
         return Result.success(list);
     }
 

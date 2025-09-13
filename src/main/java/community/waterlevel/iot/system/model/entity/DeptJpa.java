@@ -1,5 +1,6 @@
 package community.waterlevel.iot.system.model.entity;
 
+import community.waterlevel.iot.common.annotation.DataPermission;
 import community.waterlevel.iot.common.base.BaseJpaEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -24,6 +25,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(name = "sys_dept")
 @SQLDelete(sql = "UPDATE sys_dept SET is_deleted = 1 WHERE id = ?")
 @SQLRestriction("is_deleted = 0")
+@DataPermission(deptAlias = "d")
 public class DeptJpa extends BaseJpaEntity {
 
     /**
