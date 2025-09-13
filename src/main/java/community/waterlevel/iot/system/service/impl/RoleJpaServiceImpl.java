@@ -15,6 +15,7 @@ import community.waterlevel.iot.system.converter.RoleJpaConverter;
 import community.waterlevel.iot.system.model.entity.RoleJpa;
 import community.waterlevel.iot.system.model.entity.RoleMenuJpa;
 import community.waterlevel.iot.system.model.entity.RoleMenuId;
+import community.waterlevel.iot.system.model.entity.DeptJpa;
 
 import community.waterlevel.iot.system.model.form.RoleForm;
 import community.waterlevel.iot.system.model.query.RolePageQuery;
@@ -22,6 +23,7 @@ import community.waterlevel.iot.system.model.vo.RolePageVO;
 import community.waterlevel.iot.system.repository.RoleJpaRepository;
 import community.waterlevel.iot.system.repository.RoleMenuJpaRepository;
 import community.waterlevel.iot.system.repository.UserRoleJpaRepository;
+import community.waterlevel.iot.system.repository.DeptJpaRepository;
 import community.waterlevel.iot.system.service.RoleJpaService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -67,6 +69,7 @@ public class RoleJpaServiceImpl implements RoleJpaService {
     private final UserRoleJpaRepository userRoleJpaRepository;
     private final RoleJpaConverter roleJpaConverter;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final DeptJpaRepository deptJpaRepository;
 
     /**
      * Retrieves a paginated list of roles based on query parameters.
@@ -101,17 +104,46 @@ public class RoleJpaServiceImpl implements RoleJpaService {
 
     /**
      * Lists all roles as options for dropdowns, excluding the root role for
-     * non-root users.
+     * non-root users and filtering System Administrator role based on department.
+     * Only users from 'IOT' department can see 'System Administrator' role.
      *
      * @return the list of role options
      */
     @Override
     public List<Option<Long>> listRoleOptions() {
+        // Get current user's department ID
+        Long currentUserDeptId = SecurityUtils.getDeptId();
+        String currentUserDeptCode = null;
+        
+        // Get current user's department code if department ID exists
+        if (currentUserDeptId != null) {
+            try {
+                Optional<DeptJpa> deptOpt = deptJpaRepository.findById(currentUserDeptId);
+                if (deptOpt.isPresent()) {
+                    currentUserDeptCode = deptOpt.get().getCode();
+                }
+            } catch (Exception e) {
+                // If department not found, treat as non-IOT department
+                currentUserDeptCode = null;
+            }
+        }
+        
+        final String deptCode = currentUserDeptCode;
+        final boolean isIotDept = "IOT".equals(deptCode);
+        
         Specification<RoleJpa> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
+            
+            // Exclude root role for non-root users
             if (!SecurityUtils.isRoot()) {
                 predicates.add(criteriaBuilder.notEqual(root.get("code"), SystemConstants.ROOT_ROLE_CODE));
             }
+            
+            // Exclude System Administrator role for non-IOT departments
+            if (!isIotDept) {
+                predicates.add(criteriaBuilder.notEqual(root.get("code"), "System_Admin"));
+            }
+            
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
         Sort sort = Sort.by("sort").ascending();
