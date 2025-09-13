@@ -7,6 +7,7 @@ import community.waterlevel.iot.common.constant.SystemConstants;
 import community.waterlevel.iot.common.enums.StatusEnum;
 import community.waterlevel.iot.common.exception.BusinessException;
 import community.waterlevel.iot.common.model.Option;
+import community.waterlevel.iot.core.security.util.SecurityUtils;
 import community.waterlevel.iot.system.converter.DeptJpaConverter;
 import community.waterlevel.iot.system.model.entity.DeptJpa;
 import community.waterlevel.iot.system.model.form.DeptForm;
@@ -50,6 +51,9 @@ public class DeptJpaServiceImpl {
     /**
      * Retrieves a list of departments based on the provided query parameters,
      * supporting filtering and sorting.
+     * Role-based filtering:
+     * - System Administrator: Can see all departments
+     * - Other roles: Can only see their own department and child departments
      *
      * @param queryParams the query parameters for filtering departments
      * @return a hierarchical list of department view objects
@@ -69,6 +73,43 @@ public class DeptJpaServiceImpl {
                         criteriaBuilder.equal(root.get("status"), queryParams.getStatus()));
             }
 
+            // Add role-based filtering
+            Set<String> roles = SecurityUtils.getRoles();
+            boolean isSystemAdmin = roles != null && roles.contains("System_Admin");
+            boolean isCommunityAdmin = roles != null && roles.contains("Community_Admin");
+            
+            if (!isSystemAdmin) {
+                // Non-System Administrator users need department filtering
+                Long currentUserDeptId = SecurityUtils.getDeptId();
+                
+                if (isCommunityAdmin && currentUserDeptId == null) {
+                    // Community Admin with no specific department sees all community departments (non-root)
+                    predicates.add(criteriaBuilder.and(
+                        criteriaBuilder.isNotNull(root.get("parentId")),
+                        criteriaBuilder.greaterThan(root.get("parentId"), 0L)
+                    ));
+                } else if (currentUserDeptId != null) {
+                    // Get current user's department tree path
+                    Optional<DeptJpa> currentDeptOpt = deptJpaRepository.findById(currentUserDeptId);
+                    if (currentDeptOpt.isPresent()) {
+                        DeptJpa currentDept = currentDeptOpt.get();
+                        String currentTreePath = currentDept.getTreePath() + "," + currentDept.getId();
+                        
+                        // Filter departments: current department or child departments
+                        Predicate currentDeptPredicate = criteriaBuilder.equal(root.get("id"), currentUserDeptId);
+                        Predicate childDeptsPredicate = criteriaBuilder.like(root.get("treePath"), currentTreePath + "%");
+                        
+                        predicates.add(criteriaBuilder.or(currentDeptPredicate, childDeptsPredicate));
+                    } else {
+                        // If current department not found, show no departments
+                        predicates.add(criteriaBuilder.equal(root.get("id"), -1L));
+                    }
+                } else {
+                    // If user has no department, show no departments
+                    predicates.add(criteriaBuilder.equal(root.get("id"), -1L));
+                }
+            }
+
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
 
@@ -84,17 +125,69 @@ public class DeptJpaServiceImpl {
 
     /**
      * Retrieves a list of department options for selection components.
+     * Role-based filtering:
+     * - System Administrator: Can see all departments
+     * - Other roles: Can only see their own department and child departments
      *
      * @return a hierarchical list of department options
      */
     public List<Option<Long>> listDeptOptions() {
-        List<DeptJpa> deptList = deptJpaRepository.findByStatus(StatusEnum.ENABLE.getValue());
+        List<DeptJpa> deptList;
+        
+        // Check user roles
+        Set<String> roles = SecurityUtils.getRoles();
+        Long currentUserDeptId = SecurityUtils.getDeptId();
+        boolean isSystemAdmin = roles != null && roles.contains("System_Admin");
+        boolean isCommunityAdmin = roles != null && roles.contains("Community_Admin");
+        
+        if (isSystemAdmin) {
+            // System Administrator can see all departments
+            deptList = deptJpaRepository.findByStatus(StatusEnum.ENABLE.getValue());
+        } else if (isCommunityAdmin || currentUserDeptId != null) {
+            // Community Admin and users with departments can see their department tree
+            if (currentUserDeptId == null) {
+                // If Community Admin has no specific department, show all community departments (non-root)
+                deptList = deptJpaRepository.findByStatus(StatusEnum.ENABLE.getValue())
+                        .stream()
+                        .filter(dept -> dept.getParentId() != null && dept.getParentId() > 0) // Exclude root department
+                        .collect(Collectors.toList());
+            } else {
+                // Show user's department and its children
+                
+                // Get current user's department
+                Optional<DeptJpa> currentDeptOpt = deptJpaRepository.findById(currentUserDeptId);
+                if (!currentDeptOpt.isPresent()) {
+                    return new ArrayList<>();
+                }
+                
+                DeptJpa currentDept = currentDeptOpt.get();
+                String currentTreePath = currentDept.getTreePath() + "," + currentDept.getId();
+                
+                // Find all departments that are children of current department or the current department itself
+                List<DeptJpa> allDepts = deptJpaRepository.findByStatus(StatusEnum.ENABLE.getValue());
+                
+                deptList = allDepts.stream()
+                        .filter(dept -> {
+                            // Include current department
+                            if (dept.getId().equals(currentUserDeptId)) {
+                                return true;
+                            }
+                            // Include child departments
+                            String deptTreePath = dept.getTreePath();
+                            return deptTreePath != null && deptTreePath.startsWith(currentTreePath);
+                        })
+                        .collect(Collectors.toList());
+            }
+        } else {
+            // Users with no department and no Community Admin role get empty list
+            return new ArrayList<>();
+        }
 
         List<Option<Long>> optionList = deptList.stream()
                 .map(dept -> new Option<>(dept.getId(), dept.getName()))
                 .collect(Collectors.toList());
 
-        return buildDeptOptionTree(optionList, deptList);
+        return optionList;
     }
 
     /**
