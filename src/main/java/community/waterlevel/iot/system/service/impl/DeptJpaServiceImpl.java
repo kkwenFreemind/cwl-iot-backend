@@ -8,6 +8,7 @@ import community.waterlevel.iot.common.constant.SystemConstants;
 import community.waterlevel.iot.common.enums.StatusEnum;
 import community.waterlevel.iot.common.exception.BusinessException;
 import community.waterlevel.iot.common.model.Option;
+import community.waterlevel.iot.core.security.util.SecurityUtils;
 import community.waterlevel.iot.system.converter.DeptJpaConverter;
 import community.waterlevel.iot.system.model.entity.DeptJpa;
 import community.waterlevel.iot.system.model.form.DeptForm;
@@ -95,25 +96,140 @@ public class DeptJpaServiceImpl {
      * @param specification optional specification for additional filtering
      * @return a list of department options
      */
-    @DataPermission(deptIdColumnName = "id")
     public List<Option<Long>> listDeptOptions(Specification<DeptJpa> specification) {
+        // Check current user's data scope
+        Integer dataScope = SecurityUtils.getDataScope();
+        Long currentUserDeptId = SecurityUtils.getDeptId();
         
+        // For DEPT data scope (value = 3), we need special handling to include parent departments
+        // for proper tree structure
+        if (dataScope != null && dataScope == 3 && currentUserDeptId != null) {
+            return listDeptOptionsForDeptScope(specification, currentUserDeptId);
+        }
+        
+        // For other data scopes, use the normal data permission filtering
+        return listDeptOptionsWithDataPermission(specification);
+    }
+    
+    /**
+     * Lists department options with data permission filtering applied.
+     * Used for data scopes other than DEPT (3).
+     */
+    @DataPermission(deptIdColumnName = "id")
+    private List<Option<Long>> listDeptOptionsWithDataPermission(Specification<DeptJpa> specification) {
         // Create base specification for enabled departments
         Specification<DeptJpa> baseSpec = (root, query, criteriaBuilder) -> {
             return criteriaBuilder.equal(root.get("status"), StatusEnum.ENABLE.getValue());
         };
-        
-        // Combine with input specification if provided
-        Specification<DeptJpa> finalSpec = specification != null ? 
-            baseSpec.and(specification) : baseSpec;
-        
-        List<DeptJpa> deptList = deptJpaRepository.findAll(finalSpec);
 
-        List<Option<Long>> optionList = deptList.stream()
-                .map(dept -> new Option<>(dept.getId(), dept.getName()))
+        // Combine with input specification if provided
+        Specification<DeptJpa> finalSpec = specification != null ?
+            baseSpec.and(specification) : baseSpec;
+
+        // Retrieve filtered departments and convert to VO
+        List<DeptJpa> deptList = deptJpaRepository.findAll(finalSpec, Sort.by("sort").ascending().and(Sort.by("id").ascending()));
+
+        List<DeptVO> deptVOList = deptList.stream()
+                .map(deptJpaConverter::toVo)
                 .collect(Collectors.toList());
 
-        return optionList;
+        // Build tree structure of DeptVO
+        List<DeptVO> tree = buildDeptTree(deptVOList);
+
+        // Convert DeptVO tree to Option<Long> tree
+        List<Option<Long>> options = new ArrayList<>();
+        for (DeptVO rootDept : tree) {
+            options.add(convertDeptVoToOption(rootDept));
+        }
+
+        return options;
+    }
+
+    /**
+     * Recursively convert DeptVO to Option<Long> including children
+     */
+    private Option<Long> convertDeptVoToOption(DeptVO dept) {
+        Option<Long> option = new Option<>(dept.getId(), dept.getName());
+        if (dept.getChildren() != null && !dept.getChildren().isEmpty()) {
+            List<Option<Long>> children = new ArrayList<>();
+            for (DeptVO child : dept.getChildren()) {
+                children.add(convertDeptVoToOption(child));
+            }
+            option.setChildren(children);
+        }
+        return option;
+    }
+
+    /**
+     * Lists department options for users with DEPT data scope (value = 3).
+     * This method includes the user's department and all parent departments needed 
+     * for proper tree structure, plus any child departments.
+     */
+    private List<Option<Long>> listDeptOptionsForDeptScope(Specification<DeptJpa> specification, Long currentUserDeptId) {
+        // Get the current user's department
+        DeptJpa currentUserDept = deptJpaRepository.findById(currentUserDeptId)
+            .orElse(null);
+        
+        if (currentUserDept == null) {
+            return new ArrayList<>();
+        }
+        
+        // Collect all department IDs that the user should see
+        Set<Long> allowedDeptIds = new HashSet<>();
+        
+        // Add user's department
+        allowedDeptIds.add(currentUserDeptId);
+        
+        // Add all parent departments by parsing tree_path
+        String treePath = currentUserDept.getTreePath();
+        if (StrUtil.isNotBlank(treePath)) {
+            String[] pathIds = treePath.split(",");
+            for (String pathId : pathIds) {
+                try {
+                    Long id = Long.parseLong(pathId.trim());
+                    if (!id.equals(SystemConstants.ROOT_NODE_ID)) {
+                        allowedDeptIds.add(id);
+                    }
+                } catch (NumberFormatException e) {
+                    // Skip invalid numbers
+                }
+            }
+        }
+        
+        // Add child departments (departments where parent_id = currentUserDeptId)
+        List<DeptJpa> childDepts = deptJpaRepository.findByParentIdOrderBySort(currentUserDeptId);
+        childDepts.stream()
+            .filter(child -> child.getStatus().equals(StatusEnum.ENABLE.getValue()))
+            .forEach(child -> allowedDeptIds.add(child.getId()));
+        
+        // Create specification to filter by allowed department IDs and enabled status
+        Specification<DeptJpa> deptScopeSpec = (root, query, criteriaBuilder) -> {
+            Predicate enabledPredicate = criteriaBuilder.equal(root.get("status"), StatusEnum.ENABLE.getValue());
+            Predicate allowedIdsPredicate = root.get("id").in(allowedDeptIds);
+            return criteriaBuilder.and(enabledPredicate, allowedIdsPredicate);
+        };
+        
+        // Combine with input specification if provided
+        Specification<DeptJpa> finalSpec = specification != null ?
+            deptScopeSpec.and(specification) : deptScopeSpec;
+
+        // Retrieve filtered departments and convert to VO
+        List<DeptJpa> deptList = deptJpaRepository.findAll(finalSpec, Sort.by("sort").ascending().and(Sort.by("id").ascending()));
+
+        List<DeptVO> deptVOList = deptList.stream()
+                .map(deptJpaConverter::toVo)
+                .collect(Collectors.toList());
+
+        // Build tree structure of DeptVO
+        List<DeptVO> tree = buildDeptTree(deptVOList);
+
+        // Convert DeptVO tree to Option<Long> tree
+        List<Option<Long>> options = new ArrayList<>();
+        for (DeptVO rootDept : tree) {
+            options.add(convertDeptVoToOption(rootDept));
+        }
+
+        return options;
     }
 
     /**
