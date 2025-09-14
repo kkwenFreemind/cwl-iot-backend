@@ -69,4 +69,26 @@ public class DeptJpa extends BaseJpaEntity {
      */
     @Column(name = "status")
     private Integer status;
+
+    /**
+     * Center latitude coordinate for geospatial positioning.
+     * Used for frontend display and simple location services.
+     */
+    @Column(name = "center_latitude")
+    private Double centerLatitude;
+
+    /**
+     * Center longitude coordinate for geospatial positioning.
+     * Used for frontend display and simple location services.
+     */
+    @Column(name = "center_longitude")
+    private Double centerLongitude;
+
+    /**
+     * PostGIS spatial geometry column for spatial operations.
+     * Automatically synchronized from latitude/longitude coordinates.
+     * Used for spatial queries and indexing.
+     */
+    @Column(name = "center_geom", columnDefinition = "GEOGRAPHY(Point, 4326)")
+    private String centerGeom;
 }

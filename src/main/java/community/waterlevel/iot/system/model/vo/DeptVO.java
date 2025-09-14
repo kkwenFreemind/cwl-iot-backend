@@ -44,6 +44,12 @@ public class DeptVO {
     @Schema(description = "Status (1: enabled; 0: disabled)")
     private Integer status;
 
+    @Schema(description = "Center Latitude")
+    private Double centerLatitude;
+
+    @Schema(description = "Center Longitude")
+    private Double centerLongitude;
+
     @Schema(description = "children")
     private List<DeptVO> children;
 

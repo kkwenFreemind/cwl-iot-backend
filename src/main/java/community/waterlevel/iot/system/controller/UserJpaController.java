@@ -151,7 +151,7 @@ public class UserJpaController {
      */
     @Operation(summary = "Retrieves information about the currently logged-in user.")
     @GetMapping("/me")
-    @Log(value = "Retrieves information about the currently logged-in user.", module = LogModuleEnum.USER)
+    @Log(value = "Me", module = LogModuleEnum.USER)
     public Result<CurrentUserDTO> getCurrentUser() {
         CurrentUserDTO currentUserDTO = userService.getCurrentUserInfo();
         return Result.success(currentUserDTO);
@@ -163,9 +163,9 @@ public class UserJpaController {
      *
      * @return Result containing the user profile value object
      */
-    @Operation(summary = "Retrieves the profile information of the current user for the personal center.")
+    @Operation(summary = "Profile")
     @GetMapping("/profile")
-    @Log(value = "Retrieves the profile information of the current user for the personal center.", module = LogModuleEnum.USER)
+    @Log(value = "Profile", module = LogModuleEnum.USER)
     public Result<UserProfileVO> getUserProfile() {
         Long userId = SecurityUtils.getUserId();
         UserProfileVO userProfile = userService.getUserProfile(userId);

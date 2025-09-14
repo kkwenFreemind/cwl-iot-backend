@@ -70,4 +70,18 @@ public class DeptForm {
     @Schema(description = "Sort", example = "1")
     private Integer sort;
 
+    /**
+     * Geographic center latitude coordinate for department location.
+     * Used for mapping and location-based services. Range: -90 to 90 degrees.
+     */
+    @Schema(description = "Center Latitude", example = "25.0330")
+    private Double centerLatitude;
+
+    /**
+     * Geographic center longitude coordinate for department location.
+     * Used for mapping and location-based services. Range: -180 to 180 degrees.
+     */
+    @Schema(description = "Center Longitude", example = "121.5654")
+    private Double centerLongitude;
+
 }

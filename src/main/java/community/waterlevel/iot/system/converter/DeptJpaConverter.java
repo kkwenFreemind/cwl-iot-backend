@@ -30,6 +30,7 @@ public interface DeptJpaConverter {
     /**
      * Converts a DeptJpa entity to a DeptVO (View Object).
      * Ignores the 'children' property during mapping.
+     * The centerGeom field is automatically excluded as it's not present in DeptVO.
      *
      * @param entity the department entity
      * @return the department view object
@@ -39,8 +40,9 @@ public interface DeptJpaConverter {
 
     /**
      * Converts a DeptForm to a DeptJpa entity.
-     * Ignores id, createBy, createTime, updateBy, updateTime, isDeleted, and
-     * treePath fields during mapping.
+     * Ignores id, createBy, createTime, updateBy, updateTime, isDeleted, treePath,
+     * and centerGeom fields during mapping.
+     * The centerGeom field is automatically calculated by the database trigger.
      *
      * @param form the department form data
      * @return the department entity
@@ -52,6 +54,7 @@ public interface DeptJpaConverter {
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "treePath", ignore = true)
+    @Mapping(target = "centerGeom", ignore = true)
     DeptJpa toEntity(DeptForm form);
 
     /**
