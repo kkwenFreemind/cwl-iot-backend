@@ -42,7 +42,7 @@ public interface DeptJpaConverter {
      * Converts a DeptForm to a DeptJpa entity.
      * Ignores id, createBy, createTime, updateBy, updateTime, isDeleted, treePath,
      * and centerGeom fields during mapping.
-     * The centerGeom field is automatically calculated by the database trigger.
+     * The centerGeom field is handled by JPA annotations (insertable=false, updatable=false).
      *
      * @param form the department form data
      * @return the department entity

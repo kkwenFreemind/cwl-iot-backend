@@ -86,9 +86,10 @@ public class DeptJpa extends BaseJpaEntity {
 
     /**
      * PostGIS spatial geometry column for spatial operations.
-     * Automatically synchronized from latitude/longitude coordinates.
+     * Automatically synchronized from latitude/longitude coordinates by database trigger.
      * Used for spatial queries and indexing.
+     * This field is read-only and managed by the database.
      */
-    @Column(name = "center_geom", columnDefinition = "GEOGRAPHY(Point, 4326)")
+    @Column(name = "center_geom", columnDefinition = "GEOGRAPHY(Point, 4326)", insertable = false, updatable = false)
     private String centerGeom;
 }
