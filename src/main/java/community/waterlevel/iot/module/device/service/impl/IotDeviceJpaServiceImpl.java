@@ -4,6 +4,8 @@ import community.waterlevel.iot.module.device.model.entity.IotDeviceJpa;
 import community.waterlevel.iot.module.device.model.form.IotDeviceForm;
 import community.waterlevel.iot.module.device.model.vo.IotDeviceVO;
 import community.waterlevel.iot.module.device.repository.IotDeviceJpaRepository;
+import community.waterlevel.iot.system.repository.DeptJpaRepository;
+import community.waterlevel.iot.system.model.entity.DeptJpa;
 import community.waterlevel.iot.module.device.converter.IotDeviceJpaConverter;
 import community.waterlevel.iot.module.device.service.IotDeviceJpaService;
 import org.springframework.stereotype.Service;
@@ -16,17 +18,25 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
 
     private final IotDeviceJpaRepository repository;
     private final IotDeviceJpaConverter converter;
+    private final DeptJpaRepository deptJpaRepository;
 
-    public IotDeviceJpaServiceImpl(IotDeviceJpaRepository repository, IotDeviceJpaConverter converter) {
+    public IotDeviceJpaServiceImpl(IotDeviceJpaRepository repository, IotDeviceJpaConverter converter, DeptJpaRepository deptJpaRepository) {
         this.repository = repository;
         this.converter = converter;
+        this.deptJpaRepository = deptJpaRepository;
     }
 
     @Override
     public List<IotDeviceVO> getDevicesByDept(Long deptId) {
         List<IotDeviceJpa> list = repository.findByDeptId(deptId);
         List<IotDeviceVO> voList = new ArrayList<>();
-        for (IotDeviceJpa e : list) voList.add(converter.toVo(e));
+        for (IotDeviceJpa e : list) {
+            IotDeviceVO vo = converter.toVo(e);
+            if (e.getDeptId() != null) {
+                deptJpaRepository.findById(e.getDeptId()).ifPresent(d -> vo.setDeptName(d.getName()));
+            }
+            voList.add(vo);
+        }
         return voList;
     }
 
@@ -34,7 +44,13 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
     public List<IotDeviceVO> getDevicesByStatus(String status) {
         List<IotDeviceJpa> list = repository.findByStatus(status);
         List<IotDeviceVO> voList = new ArrayList<>();
-        for (IotDeviceJpa e : list) voList.add(converter.toVo(e));
+        for (IotDeviceJpa e : list) {
+            IotDeviceVO vo = converter.toVo(e);
+            if (e.getDeptId() != null) {
+                deptJpaRepository.findById(e.getDeptId()).ifPresent(d -> vo.setDeptName(d.getName()));
+            }
+            voList.add(vo);
+        }
         return voList;
     }
 
@@ -117,7 +133,13 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
             }
         }
         List<IotDeviceVO> voList = new ArrayList<>();
-        for (IotDeviceJpa e : filtered) voList.add(converter.toVo(e));
+        for (IotDeviceJpa e : filtered) {
+            IotDeviceVO vo = converter.toVo(e);
+            if (e.getDeptId() != null) {
+                deptJpaRepository.findById(e.getDeptId()).ifPresent(d -> vo.setDeptName(d.getName()));
+            }
+            voList.add(vo);
+        }
         return voList;
     }
 
@@ -131,7 +153,13 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
         withLoc.sort(Comparator.comparingDouble(d -> haversine(centerLat, centerLng, d.getLatitude(), d.getLongitude())));
         List<IotDeviceJpa> sub = withLoc.subList(0, Math.min(limit, withLoc.size()));
         List<IotDeviceVO> voList = new ArrayList<>();
-        for (IotDeviceJpa e : sub) voList.add(converter.toVo(e));
+        for (IotDeviceJpa e : sub) {
+            IotDeviceVO vo = converter.toVo(e);
+            if (e.getDeptId() != null) {
+                deptJpaRepository.findById(e.getDeptId()).ifPresent(d -> vo.setDeptName(d.getName()));
+            }
+            voList.add(vo);
+        }
         return voList;
     }
 
@@ -166,7 +194,13 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
     public java.util.List<IotDeviceVO> listDevices(org.springframework.data.jpa.domain.Specification<IotDeviceJpa> specification) {
         java.util.List<IotDeviceJpa> list = repository.findAll(specification);
         java.util.List<IotDeviceVO> voList = new java.util.ArrayList<>();
-        for (IotDeviceJpa e : list) voList.add(converter.toVo(e));
+        for (IotDeviceJpa e : list) {
+            IotDeviceVO vo = converter.toVo(e);
+            if (e.getDeptId() != null) {
+                deptJpaRepository.findById(e.getDeptId()).ifPresent(d -> vo.setDeptName(d.getName()));
+            }
+            voList.add(vo);
+        }
         return voList;
     }
 
