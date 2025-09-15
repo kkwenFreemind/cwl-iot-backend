@@ -5,6 +5,18 @@
 - All device information in a community must have a location
 - Using GiST (Generalized Search Tree)
 
+## Device & Dept 
+
+0d45123 2025-09-15 14:46:08 feat: refactor device model enum with backward compatibility
+b47a755 2025-09-15 13:56:21 feat: enhance IoT device management with comprehensive documentation and fixes
+51e6763 2025-09-15 13:40:50 feat: add comprehensive JavaDoc documentation to IoT device management module
+6cfceaf 2025-09-15 11:55:22 Fix created_by field in device creation and add status field support
+2f610a0 2025-09-15 11:29:20 Fix deptName lookup in listDevices(Specification) method 
+2c0068d 2025-09-15 09:49:23 Update UserJpaServiceImpl.java - preserve existing password during user update
+abdc06c 2025-09-14 21:49:50 Fix dept/options API for DEPT data scope users - Modified DeptJpaServiceImpl.listDeptOptions to handle DEPT data scope specially - Added listDeptOptionsForDeptScope method for proper tree structure - Fixes issue where admin_a user couldn't see department options
+c957c4c 2025-09-14 12:18:09 feat: Add comprehensive IoT Device management module     
+cda845a 2025-09-14 10:46:08 Fix PostGIS centerGeom persistence issue
+a9724d9 2025-09-14 08:17:57 Add spatial geolocation support to sys_dept table      
 ---
 
 ## Action 
