@@ -86,9 +86,8 @@ public class UserJpaServiceImpl implements UserJpaService {
     private final PasswordEncoder passwordEncoder;
     private final RoleJpaService roleJpaService;
     private final PermissionService permissionService;
-    private final StringRedisTemplate redisTemplate;
     private final TokenManager tokenManager;
-    private final SystemDictItemJpaService dictItemService;
+
 
     @Override
     /**

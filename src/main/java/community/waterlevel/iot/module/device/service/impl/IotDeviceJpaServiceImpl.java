@@ -60,6 +60,7 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
         if (entity.getDeviceId() == null) {
             entity.setDeviceId(UUID.randomUUID());
         }
+        entity.setCreatedBy(community.waterlevel.iot.core.security.util.SecurityUtils.getUserId());
         entity.setCreatedAt(LocalDateTime.now());
         repository.save(entity);
         return true;
@@ -75,6 +76,9 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
         exist.setLatitude(deviceForm.getLatitude());
         exist.setLongitude(deviceForm.getLongitude());
         exist.setLocation(deviceForm.getLocation());
+        if (deviceForm.getStatus() != null) {
+            exist.setStatus(Enum.valueOf(community.waterlevel.iot.module.device.model.entity.DeviceStatus.class, deviceForm.getStatus().toUpperCase()));
+        }
         exist.setUpdatedAt(LocalDateTime.now());
         repository.save(exist);
         return true;

@@ -24,4 +24,6 @@ public class IotDeviceForm {
     private Double longitude;
 
     private String location;
+
+    private String status;
 }

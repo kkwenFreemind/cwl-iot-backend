@@ -10,6 +10,7 @@ public class IotDeviceVO {
     private UUID deviceId;
     private String deviceName;
     private Long deptId;
+    private String deptName;
     private String deviceModel;
     private Double latitude;
     private Double longitude;
