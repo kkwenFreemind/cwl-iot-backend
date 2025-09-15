@@ -227,6 +227,10 @@ public class UserJpaServiceImpl implements UserJpaService {
         UserJpa entity = userJpaConverter.toEntity(userForm);
         entity.setId(userId);
 
+        // UserForm does not contain a password field. Preserve existing password
+        // to avoid unintentionally blanking it during an update.
+        userJpaRepository.findById(userId).ifPresent(existing -> entity.setPassword(existing.getPassword()));
+
         UserJpa savedUser = userJpaRepository.save(entity);
 
         if (savedUser.getId() != null) {
@@ -379,6 +383,10 @@ public class UserJpaServiceImpl implements UserJpaService {
 
         UserJpa entity = userJpaConverter.toEntity(formData);
         entity.setId(userId);
+
+        // Preserve existing password during profile update (profile should not clear password)
+        UserJpa existing = userOpt.get();
+        entity.setPassword(existing.getPassword());
 
         UserJpa savedUser = userJpaRepository.save(entity);
         return savedUser.getId() != null;
