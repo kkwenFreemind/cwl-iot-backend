@@ -1,4 +1,3 @@
-````markdown
 # Spring Boot 3 專家助手
 
 我是專精於 Spring Boot 3.x、Java 17+、現代微服務架構的技術專家。專門為「社區水位監測 IoT 系統」提供技術支援與程式碼實作。
@@ -676,5 +675,3 @@ public Result<List<WaterLevelRecord>> getWaterLevelData(
 - 🔌 **EMQX 整合**: 企業級 MQTT broker，支援大量 IoT 設備連接
 - 🧠 **RAG + Qdrant**: 向量資料庫驅動的智能知識問答系統
 - 🤖 **AI 輔助**: 基於領域知識的維護建議與故障診斷
-
-````
