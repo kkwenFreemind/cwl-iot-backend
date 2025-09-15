@@ -3,6 +3,8 @@ package community.waterlevel.iot.module.device.model.form;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum;
+import community.waterlevel.iot.module.device.model.enums.DeviceTypeEnum;
 
 import java.util.UUID;
 
@@ -37,7 +39,7 @@ import java.util.UUID;
  * @author Chang Xiu-Wen, AI-Enhanced
  * @since 2025/09/15
  * @see community.waterlevel.iot.module.device.model.entity.IotDeviceJpa
- * @see community.waterlevel.iot.module.device.model.entity.DeviceStatus
+ * @see community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum
  */
 @Data
 public class IotDeviceForm {
@@ -97,6 +99,20 @@ public class IotDeviceForm {
     private String deviceModel;
 
     /**
+     * Type classification of the IoT device.
+     *
+     * <p>Categorizes the device by its functional type, such as water level sensor
+     * or other monitoring devices. This field provides type-safe device
+     * classification for API operations and client interactions.
+     *
+     * <p>Valid values: "WATER_LEVEL_SENSOR", "OTHER" (case-insensitive)
+     * <p>Validation: Optional field (validated in service layer)
+     * <p>Conversion: Automatically converted to {@link DeviceTypeEnum} enum
+     * <p>Default: If not provided, defaults to "OTHER"
+     */
+    private String deviceType;
+
+    /**
      * Latitude coordinate of the device's deployment location.
      *
      * <p>Stores the WGS84 latitude coordinate where the device is physically
@@ -144,7 +160,7 @@ public class IotDeviceForm {
      *
      * <p>Valid values: "ACTIVE", "INACTIVE", "DISABLED" (case-insensitive)
      * <p>Validation: Optional field (validated in service layer)
-     * <p>Conversion: Automatically converted to {@link community.waterlevel.iot.module.device.model.entity.DeviceStatus} enum
+     * <p>Conversion: Automatically converted to {@link community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum} enum
      * <p>Default: If not provided, defaults to "INACTIVE"
      */
     private String status;

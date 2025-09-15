@@ -1,10 +1,5 @@
 package community.waterlevel.iot.common.result;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-
-import java.io.Serializable;
-
 /**
  * Enumeration of standardized response codes for API results.
  * <p>
@@ -19,16 +14,12 @@ import java.io.Serializable;
  *
  * @author Ray.Hao
  * @since 2020/6/23
- * 
+ *
  * @author Chang Xiu-Wen, AI-Enhanced
  * @since 2025/09/11
- * 
+ *
  **/
-@AllArgsConstructor
-@NoArgsConstructor
-public enum ResultCode implements IResultCode {
-
-    /**
+public enum ResultCode implements IResultCode {    /**
      * Operation completed successfully.
      */
     SUCCESS("00000", "OK"),
@@ -742,6 +733,17 @@ public enum ResultCode implements IResultCode {
      * The descriptive message for the response code.
      */
     private String msg;
+
+    /**
+     * Constructs a new ResultCode with the specified code and message.
+     *
+     * @param code the response code string
+     * @param msg the descriptive message for the response code
+     */
+    ResultCode(String code, String msg) {
+        this.code = code;
+        this.msg = msg;
+    }
 
     /**
      * Returns a JSON-style string representation of the response code and message.

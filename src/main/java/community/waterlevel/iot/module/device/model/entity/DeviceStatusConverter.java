@@ -1,5 +1,6 @@
 package community.waterlevel.iot.module.device.model.entity;
 
+import community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
@@ -7,7 +8,7 @@ import jakarta.persistence.Converter;
  * JPA AttributeConverter for seamless conversion between DeviceStatus enum and database string values.
  *
  * <p>This converter enables JPA to automatically handle the transformation between the strongly-typed
- * {@link DeviceStatus} enum used in the application domain model and the string values stored in the
+ * {@link DeviceStatusEnum} enum used in the application domain model and the string values stored in the
  * database. It ensures data consistency and type safety while maintaining compatibility with the
  * database schema.
  *
@@ -15,15 +16,15 @@ import jakarta.persistence.Converter;
  * <ul>
  *   <li>Case-insensitive conversion from database strings to enum values</li>
  *   <li>Graceful handling of null values and unknown database entries</li>
- *   <li>Fallback to {@link DeviceStatus#INACTIVE} for invalid database values</li>
+ *   <li>Fallback to {@link DeviceStatusEnum#INACTIVE} for invalid database values</li>
  *   <li>Lowercase string storage to match database conventions</li>
  * </ul>
  *
  * <p>Database mapping:
  * <ul>
- *   <li>{@link DeviceStatus#ACTIVE} ↔ "active"</li>
- *   <li>{@link DeviceStatus#INACTIVE} ↔ "inactive"</li>
- *   <li>{@link DeviceStatus#DISABLED} ↔ "disabled"</li>
+ *   <li>{@link DeviceStatusEnum#ACTIVE} ↔ "active"</li>
+ *   <li>{@link DeviceStatusEnum#INACTIVE} ↔ "inactive"</li>
+ *   <li>{@link DeviceStatusEnum#DISABLED} ↔ "disabled"</li>
  * </ul>
  *
  * <p>This converter is explicitly configured with {@code autoApply = false} to ensure
@@ -32,11 +33,11 @@ import jakarta.persistence.Converter;
  *
  * @author Chang Xiu-Wen, AI-Enhanced
  * @since 2025/09/15
- * @see DeviceStatus
+ * @see DeviceStatusEnum
  * @see AttributeConverter
  */
 @Converter(autoApply = false)
-public class DeviceStatusConverter implements AttributeConverter<DeviceStatus, String> {
+public class DeviceStatusConverter implements AttributeConverter<DeviceStatusEnum, String> {
 
     /**
      * Converts a DeviceStatus enum value to its database string representation.
@@ -50,7 +51,7 @@ public class DeviceStatusConverter implements AttributeConverter<DeviceStatus, S
      *         or null if the input attribute is null
      */
     @Override
-    public String convertToDatabaseColumn(DeviceStatus attribute) {
+    public String convertToDatabaseColumn(DeviceStatusEnum attribute) {
         return attribute == null ? null : attribute.name().toLowerCase();
     }
 
@@ -59,7 +60,7 @@ public class DeviceStatusConverter implements AttributeConverter<DeviceStatus, S
      *
      * <p>This method performs a case-insensitive conversion from the database string
      * to the appropriate enum value. If the database contains an unknown or invalid
-     * status value, it gracefully falls back to {@link DeviceStatus#INACTIVE} to
+     * status value, it gracefully falls back to {@link DeviceStatusEnum#INACTIVE} to
      * ensure application stability.
      *
      * <p>The conversion process:
@@ -71,16 +72,16 @@ public class DeviceStatusConverter implements AttributeConverter<DeviceStatus, S
      *
      * @param dbData the string value from the database; may be null
      * @return the corresponding DeviceStatus enum value, or null if dbData is null,
-     *         or {@link DeviceStatus#INACTIVE} if the conversion fails
+     *         or {@link DeviceStatusEnum#INACTIVE} if the conversion fails
      */
     @Override
-    public DeviceStatus convertToEntityAttribute(String dbData) {
+    public DeviceStatusEnum convertToEntityAttribute(String dbData) {
         if (dbData == null) return null;
         try {
-            return DeviceStatus.valueOf(dbData.toUpperCase());
+            return DeviceStatusEnum.valueOf(dbData.toUpperCase());
         } catch (IllegalArgumentException ex) {
             // Unknown value in DB - default to INACTIVE to be safe
-            return DeviceStatus.INACTIVE;
+            return DeviceStatusEnum.INACTIVE;
         }
     }
 }

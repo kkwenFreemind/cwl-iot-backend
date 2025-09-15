@@ -1,7 +1,7 @@
 package community.waterlevel.iot.module.device.converter;
 
-import community.waterlevel.iot.module.device.model.entity.DeviceStatus;
 import community.waterlevel.iot.module.device.model.entity.IotDeviceJpa;
+import community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum;
 import community.waterlevel.iot.module.device.model.form.IotDeviceForm;
 import community.waterlevel.iot.module.device.model.vo.IotDeviceVO;
 import org.mapstruct.Mapper;
@@ -18,7 +18,7 @@ import org.mapstruct.Mapping;
  * </ul>
  *
  * <p>The converter handles complex type conversions, particularly for the device status field
- * which requires transformation between String (form/VO) and {@link DeviceStatus} enum (entity).
+ * which requires transformation between String (form/VO) and {@link DeviceStatusEnum} enum (entity).
  *
  * <p>Key features:
  * <ul>
@@ -39,7 +39,7 @@ public interface IotDeviceJpaConverter {
      * Converts an IoT device JPA entity to a view object for presentation.
      *
      * <p>This method maps the database entity to a client-friendly view object,
-     * handling the conversion of the status field from {@link DeviceStatus} enum
+     * handling the conversion of the status field from {@link DeviceStatusEnum} enum
      * to String representation.
      *
      * <p>Note: The {@code deptName} field is ignored in this mapping as it is
@@ -95,9 +95,9 @@ public interface IotDeviceJpaConverter {
      * Converts a string representation to a DeviceStatus enum value.
      *
      * <p>This default method handles the conversion from string values (typically
-     * from API requests) to the strongly-typed {@link DeviceStatus} enum used
+     * from API requests) to the strongly-typed {@link DeviceStatusEnum} enum used
      * in the JPA entity. The conversion is case-insensitive and provides
-     * fallback to {@link DeviceStatus#INACTIVE} for invalid inputs.
+     * fallback to {@link DeviceStatusEnum#INACTIVE} for invalid inputs.
      *
      * <p>Supported string values: "ACTIVE", "INACTIVE", "DISABLED"
      * (case-insensitive).
@@ -105,26 +105,26 @@ public interface IotDeviceJpaConverter {
      * @param status the string representation of device status
      * @return the corresponding DeviceStatus enum value, or INACTIVE if invalid/null
      */
-    default DeviceStatus stringToDeviceStatus(String status) {
-        if (status == null) return DeviceStatus.INACTIVE;
+    default DeviceStatusEnum stringToDeviceStatus(String status) {
+        if (status == null) return DeviceStatusEnum.INACTIVE;
         try {
-            return DeviceStatus.valueOf(status.toUpperCase());
+            return DeviceStatusEnum.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return DeviceStatus.INACTIVE;
+            return DeviceStatusEnum.INACTIVE;
         }
     }
 
     /**
      * Converts a DeviceStatus enum value to its string representation.
      *
-     * <p>This default method handles the conversion from {@link DeviceStatus} enum
+     * <p>This default method handles the conversion from {@link DeviceStatusEnum} enum
      * to string values for API responses and form representations. Returns the
      * enum name in uppercase format.
      *
      * @param status the DeviceStatus enum value to convert
      * @return the string representation of the status, or null if status is null
      */
-    default String deviceStatusToString(DeviceStatus status) {
+    default String deviceStatusToString(DeviceStatusEnum status) {
         return status == null ? null : status.name();
     }
 }

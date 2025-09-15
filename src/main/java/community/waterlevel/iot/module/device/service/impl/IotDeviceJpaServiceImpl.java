@@ -135,7 +135,7 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
      *
      * @see #getDevicesByDept(Long)
      * @see IotDeviceJpaRepository#findByStatus(String)
-     * @see community.waterlevel.iot.module.device.model.entity.DeviceStatus
+     * @see community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum
      */
     @Override
     public List<IotDeviceVO> getDevicesByStatus(String status) {
@@ -221,7 +221,7 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
         exist.setLongitude(deviceForm.getLongitude());
         exist.setLocation(deviceForm.getLocation());
         if (deviceForm.getStatus() != null) {
-            exist.setStatus(Enum.valueOf(community.waterlevel.iot.module.device.model.entity.DeviceStatus.class, deviceForm.getStatus().toUpperCase()));
+            exist.setStatus(Enum.valueOf(community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum.class, deviceForm.getStatus().toUpperCase()));
         }
         exist.setUpdatedAt(LocalDateTime.now());
         repository.save(exist);
@@ -278,14 +278,14 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
      *         {@code false} if the device was not found
      *
      * @see #updateDevice(UUID, IotDeviceForm)
-     * @see community.waterlevel.iot.module.device.model.entity.DeviceStatus
+     * @see community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum
      */
     @Override
     public boolean updateDeviceStatus(UUID deviceId, String status) {
         Optional<IotDeviceJpa> opt = repository.findById(deviceId);
         if (opt.isEmpty()) return false;
         IotDeviceJpa exist = opt.get();
-        exist.setStatus(Enum.valueOf(community.waterlevel.iot.module.device.model.entity.DeviceStatus.class, status.toUpperCase()));
+        exist.setStatus(Enum.valueOf(community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum.class, status.toUpperCase()));
         exist.setUpdatedAt(LocalDateTime.now());
         repository.save(exist);
         return true;

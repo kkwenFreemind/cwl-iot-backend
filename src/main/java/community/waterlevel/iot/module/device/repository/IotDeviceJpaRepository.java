@@ -115,7 +115,7 @@ public interface IotDeviceJpaRepository extends JpaRepository<IotDeviceJpa, UUID
      * @throws IllegalArgumentException if status is null
      *
      * @see IotDeviceJpa#getStatus()
-     * @see community.waterlevel.iot.module.device.model.entity.DeviceStatus
+     * @see community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum
      * @see community.waterlevel.iot.module.device.service.IotDeviceJpaService#getDevicesByStatus(String)
      */
     @Query("SELECT d FROM IotDeviceJpa d WHERE d.status = :status")

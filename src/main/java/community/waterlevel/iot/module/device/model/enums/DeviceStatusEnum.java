@@ -1,4 +1,4 @@
-package community.waterlevel.iot.module.device.model.entity;
+package community.waterlevel.iot.module.device.model.enums;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -15,14 +15,13 @@ import java.util.stream.Collectors;
  * <ul>
  *   <li>{@link #ACTIVE} - Device is operational and actively reporting data</li>
  *   <li>{@link #INACTIVE} - Device is registered but not currently active</li>
- *   <li>{@link #DISABLED} - Device is disabled and not allowed to operate</li>
  * </ul>
  *
  * @author Chang Xiu-Wen, AI-Enhanced
  * @since 2025/09/15
  * 
  */
-public enum DeviceStatus {
+public enum DeviceStatusEnum {
 
     /**
      * Device is operational and actively reporting data.
@@ -39,14 +38,14 @@ public enum DeviceStatus {
     private final String displayName;
 
     // Cache for case-insensitive lookup
-    private static final Map<String, DeviceStatus> NAME_TO_STATUS_MAP =
+    private static final Map<String, DeviceStatusEnum> NAME_TO_STATUS_MAP =
         Arrays.stream(values())
               .collect(Collectors.toMap(
                   status -> status.name().toLowerCase(),
                   Function.identity()
               ));
 
-    DeviceStatus(String displayName) {
+    DeviceStatusEnum(String displayName) {
         this.displayName = displayName;
     }
 
@@ -86,7 +85,7 @@ public enum DeviceStatus {
      * @param statusString the string representation of the status (case-insensitive)
      * @return the corresponding DeviceStatus, or INACTIVE if not found
      */
-    public static DeviceStatus fromString(String statusString) {
+    public static DeviceStatusEnum fromString(String statusString) {
         if (statusString == null || statusString.trim().isEmpty()) {
             return INACTIVE;
         }
