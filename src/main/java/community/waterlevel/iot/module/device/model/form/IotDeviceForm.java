@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum;
-import community.waterlevel.iot.module.device.model.enums.DeviceTypeEnum;
+import community.waterlevel.iot.module.device.model.enums.DeviceModelEnum;
 
 import java.util.UUID;
 
@@ -107,7 +107,7 @@ public class IotDeviceForm {
      *
      * <p>Valid values: "WATER_LEVEL_SENSOR", "OTHER" (case-insensitive)
      * <p>Validation: Optional field (validated in service layer)
-     * <p>Conversion: Automatically converted to {@link DeviceTypeEnum} enum
+     * <p>Conversion: Automatically converted to {@link DeviceModelEnum} enum
      * <p>Default: If not provided, defaults to "OTHER"
      */
     private String deviceType;

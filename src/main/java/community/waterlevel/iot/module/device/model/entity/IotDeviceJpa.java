@@ -2,7 +2,8 @@ package community.waterlevel.iot.module.device.model.entity;
 
 import community.waterlevel.iot.common.annotation.DataPermission;
 import community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum;
-import community.waterlevel.iot.module.device.model.enums.DeviceTypeEnum;
+import community.waterlevel.iot.module.device.model.enums.DeviceModelEnum;
+import community.waterlevel.iot.module.device.model.enums.DeviceModelEnumConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,7 +26,7 @@ import java.util.UUID;
  *   <li>Data permission filtering based on department and user access</li>
  *   <li>PostGIS geography support for spatial queries</li>
  *   <li>Automatic status conversion using {@link DeviceStatusConverter}</li>
- *   <li>Type-safe device classification using {@link DeviceTypeEnum}</li>
+ *   <li>Type-safe device classification using {@link DeviceModelEnum}</li>
  *   <li>Comprehensive audit trail with creation and modification tracking</li>
  * </ul>
  *
@@ -34,7 +35,7 @@ import java.util.UUID;
  * @author Chang Xiu-Wen, AI-Enhanced
  * @since 2025/09/15
  * @see DeviceStatusEnum
- * @see DeviceTypeEnum
+ * @see DeviceModelEnum
  * @see DeviceStatusConverter
  * @see DataPermission
  */
@@ -95,24 +96,10 @@ public class IotDeviceJpa {
      *
      * <p>Database column: {@code device_model} (NULLABLE)
      */
+    @Convert(converter = DeviceModelEnumConverter.class)
     @Column(name = "device_model")
-    private String deviceModel;
+    private DeviceModelEnum deviceModel = DeviceModelEnum.OTHER;
 
-    /**
-     * Type classification of the IoT device.
-     *
-     * <p>Categorizes the device by its functional type, such as water level sensor,
-     * temperature sensor, or other monitoring devices. This field provides
-     * type-safe device classification and is used for filtering and reporting.
-     *
-     * <p>Database column: {@code device_type} (NOT NULL)
-     * <p>Default: {@link DeviceTypeEnum#OTHER}
-     * <p>Valid values: WATER_LEVEL_SENSOR, OTHER
-     * <p>Enum: {@link DeviceTypeEnum}
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "device_type", nullable = false)
-    private DeviceTypeEnum deviceType = DeviceTypeEnum.OTHER;
 
     /**
      * Latitude coordinate of the device's physical location.

@@ -7,6 +7,7 @@ import community.waterlevel.iot.module.device.repository.IotDeviceJpaRepository;
 import community.waterlevel.iot.system.repository.DeptJpaRepository;
 import community.waterlevel.iot.module.device.converter.IotDeviceJpaConverter;
 import community.waterlevel.iot.module.device.service.IotDeviceJpaService;
+import community.waterlevel.iot.module.device.model.enums.DeviceModelEnum;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -216,7 +217,9 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
         if (opt.isEmpty()) return false;
         IotDeviceJpa exist = opt.get();
         exist.setDeviceName(deviceForm.getDeviceName());
-        exist.setDeviceModel(deviceForm.getDeviceModel());
+        if (deviceForm.getDeviceModel() != null) {
+            exist.setDeviceModel(DeviceModelEnum.fromString(deviceForm.getDeviceModel()));
+        }
         exist.setLatitude(deviceForm.getLatitude());
         exist.setLongitude(deviceForm.getLongitude());
         exist.setLocation(deviceForm.getLocation());

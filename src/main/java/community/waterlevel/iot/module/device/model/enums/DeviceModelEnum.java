@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * @since 2025/09/15
  * @see community.waterlevel.iot.module.device.model.entity.IotDeviceJpa
  */
-public enum DeviceTypeEnum {
+public enum DeviceModelEnum {
 
     /**
      * Water level sensor device.
@@ -51,7 +51,7 @@ public enum DeviceTypeEnum {
     private final String displayName;
 
     // Cache for case-insensitive lookup
-    private static final Map<String, DeviceTypeEnum> NAME_TO_TYPE_MAP =
+    private static final Map<String, DeviceModelEnum> NAME_TO_TYPE_MAP =
         Arrays.stream(values())
               .collect(Collectors.toMap(
                   type -> type.name().toLowerCase(),
@@ -63,7 +63,7 @@ public enum DeviceTypeEnum {
      *
      * @param displayName the human-readable name for this device type
      */
-    DeviceTypeEnum(String displayName) {
+    DeviceModelEnum(String displayName) {
         this.displayName = displayName;
     }
 
@@ -109,19 +109,30 @@ public enum DeviceTypeEnum {
      * <p>This method provides flexible string-to-enum conversion with fallback
      * to {@link #OTHER} for unknown or invalid values.
      *
+     * <p>Supports backward compatibility with legacy data formats:
+     * <ul>
+     *   <li>"water" → WATER_LEVEL_SENSOR (legacy format)</li>
+     *   <li>"water_level_sensor" → WATER_LEVEL_SENSOR</li>
+     *   <li>"other" → OTHER</li>
+     * </ul>
+     *
      * @param typeString the string representation of the device type (case-insensitive)
      * @return the corresponding DeviceType, or {@link #OTHER} if not found or null
      * @throws IllegalArgumentException if typeString is null (handled gracefully)
      */
-    public static DeviceTypeEnum fromString(String typeString) {
+    public static DeviceModelEnum fromString(String typeString) {
         if (typeString == null || typeString.trim().isEmpty()) {
             return OTHER;
         }
 
-        return NAME_TO_TYPE_MAP.getOrDefault(
-            typeString.trim().toLowerCase(),
-            OTHER
-        );
+        String normalized = typeString.trim().toLowerCase();
+
+        // Handle legacy data format: "water" should map to WATER_LEVEL_SENSOR
+        if ("water".equals(normalized)) {
+            return WATER_LEVEL_SENSOR;
+        }
+
+        return NAME_TO_TYPE_MAP.getOrDefault(normalized, OTHER);
     }
 
     /**

@@ -2,6 +2,7 @@ package community.waterlevel.iot.module.device.converter;
 
 import community.waterlevel.iot.module.device.model.entity.IotDeviceJpa;
 import community.waterlevel.iot.module.device.model.enums.DeviceStatusEnum;
+import community.waterlevel.iot.module.device.model.enums.DeviceModelEnum;
 import community.waterlevel.iot.module.device.model.form.IotDeviceForm;
 import community.waterlevel.iot.module.device.model.vo.IotDeviceVO;
 import org.mapstruct.Mapper;
@@ -77,6 +78,7 @@ public interface IotDeviceJpaConverter {
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "geom", ignore = true) // Handled by database trigger
+    @Mapping(target = "deviceModel", source = "deviceModel")
     IotDeviceJpa toEntity(IotDeviceForm form);
 
     /**
@@ -89,6 +91,7 @@ public interface IotDeviceJpaConverter {
      * @param entity the JPA entity containing current device data
      * @return the form object with populated fields for API response
      */
+    @Mapping(target = "deviceType", source = "deviceModel")
     IotDeviceForm toForm(IotDeviceJpa entity);
 
     /**
@@ -126,5 +129,41 @@ public interface IotDeviceJpaConverter {
      */
     default String deviceStatusToString(DeviceStatusEnum status) {
         return status == null ? null : status.name();
+    }
+
+    /**
+     * Converts a string representation to a DeviceType enum value.
+     *
+     * <p>This default method handles the conversion from string values (typically
+     * from API requests) to the strongly-typed {@link DeviceModelEnum} enum used
+     * in the JPA entity. The conversion is case-insensitive and provides
+     * fallback to {@link DeviceModelEnum#OTHER} for invalid inputs.
+     *
+     * <p>Supported string values: "WATER_LEVEL_SENSOR", "OTHER" (case-insensitive).
+     *
+     * @param deviceType the string representation of device type
+     * @return the corresponding DeviceType enum value, or OTHER if invalid/null
+     */
+    default DeviceModelEnum stringToDeviceType(String deviceType) {
+        if (deviceType == null) return DeviceModelEnum.OTHER;
+        try {
+            return DeviceModelEnum.valueOf(deviceType.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return DeviceModelEnum.OTHER;
+        }
+    }
+
+    /**
+     * Converts a DeviceType enum value to its string representation.
+     *
+     * <p>This default method handles the conversion from {@link DeviceModelEnum} enum
+     * to string values for API responses and form representations. Returns the
+     * enum name in uppercase format.
+     *
+     * @param deviceType the DeviceType enum value to convert
+     * @return the string representation of the device type, or null if deviceType is null
+     */
+    default String deviceTypeToString(DeviceModelEnum deviceType) {
+        return deviceType == null ? null : deviceType.name();
     }
 }
