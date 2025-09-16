@@ -47,15 +47,21 @@ public class DataPermissionFilterFactory {
         
         log.info("Creating data permission filter for dataScope: {}", dataScope);
 
+        // If no user context (null userId and deptId), skip filtering for testing/development
+        Long currentUserId = SecurityUtils.getUserId();
+        Long currentUserDeptId = SecurityUtils.getDeptId();
+        
+        if (currentUserId == null && currentUserDeptId == null) {
+            log.info("No user authentication context found, skipping data permission filtering for testing");
+            return null;
+        }
+        
+        log.info("Current user ID: {}, Current user dept ID: {}", currentUserId, currentUserDeptId);
+
         if (dataScope == null) {
             log.info("DataScope is null, no filtering applied");
             return null;
         }
-
-        Long currentUserId = SecurityUtils.getUserId();
-        Long currentUserDeptId = SecurityUtils.getDeptId();
-        
-        log.info("Current user ID: {}, Current user dept ID: {}", currentUserId, currentUserDeptId);
 
         switch (dataScope) {
             case 1: // ALL - System administrators can see all data

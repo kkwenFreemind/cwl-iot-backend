@@ -61,7 +61,12 @@ public enum PhysicalQuantity {
     /**
      * Signal strength - wireless signal strength.
      */
-    SIGNAL_STRENGTH("Signal Strength", PhysicalQuantityCategory.OTHER);
+    SIGNAL_STRENGTH("Signal Strength", PhysicalQuantityCategory.OTHER),
+
+    /**
+     * Flow rate - volume or mass flow rate measurement.
+     */
+    FLOW_RATE("Flow Rate", PhysicalQuantityCategory.FLOW_RATE);
 
     private final String displayName;
     private final PhysicalQuantityCategory category;

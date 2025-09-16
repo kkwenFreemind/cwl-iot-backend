@@ -8,6 +8,7 @@ import community.waterlevel.iot.module.metric.model.enums.MetricUnit;
 import community.waterlevel.iot.module.metric.model.enums.PhysicalQuantity;
 import community.waterlevel.iot.module.metric.model.form.IotMetricDefinitionCreateForm;
 import community.waterlevel.iot.module.metric.model.form.IotMetricDefinitionUpdateForm;
+import community.waterlevel.iot.module.metric.model.query.IotMetricDefinitionQuery;
 import community.waterlevel.iot.module.metric.service.IotMetricDefinitionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -572,13 +574,37 @@ public class IotMetricDefinitionController {
      */
     @GetMapping("/page")
     @Operation(summary = "Get paginated IoT metric definitions for a department", description = "Get paginated IoT metric definitions for a department")
-    public Result<PageResult<IotMetricDefinition>> getPageByDeptId(
-            @Parameter(description = "部門ID") @RequestParam Long deptId,
-            @Parameter(description = "頁碼") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "每頁大小") @RequestParam(defaultValue = "10") int size) {
-        log.debug("Getting paginated IoT metric definitions for department: {}, page: {}, size: {}", deptId, page, size);
-        Pageable pageable = PageRequest.of(page, size);
-        Page<IotMetricDefinition> result = service.getPageByDeptId(deptId, pageable);
+    public Result<PageResult<IotMetricDefinition>> getPageByDeptId(IotMetricDefinitionQuery queryParams) {
+        log.info("Getting paginated IoT metric definitions with query: {}", queryParams);
+        
+        Specification<IotMetricDefinition> spec = (root, query, cb) -> {
+            java.util.List<jakarta.persistence.criteria.Predicate> preds = new java.util.ArrayList<>();
+
+            if (queryParams.getKeywords() != null && !queryParams.getKeywords().isEmpty()) {
+                preds.add(cb.like(root.get("metricName"), "%" + queryParams.getKeywords() + "%"));
+            }
+
+            if (queryParams.getPhysicalQuantity() != null) {
+                preds.add(cb.equal(root.get("physicalQuantity"), queryParams.getPhysicalQuantity()));
+            }
+
+            if (queryParams.getUnit() != null) {
+                preds.add(cb.equal(root.get("unit"), queryParams.getUnit()));
+            }
+
+            if (queryParams.getDataType() != null) {
+                preds.add(cb.equal(root.get("dataType"), queryParams.getDataType()));
+            }
+
+            if (queryParams.getDeptId() != null) {
+                preds.add(cb.equal(root.get("deptId"), queryParams.getDeptId()));
+            }
+
+            return preds.isEmpty() ? null : cb.and(preds.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
+        Pageable pageable = PageRequest.of(queryParams.getPage(), queryParams.getSize());
+        Page<IotMetricDefinition> result = service.getPageBySpec(spec, pageable);
         PageResult<IotMetricDefinition> pageResult = new PageResult<>();
         pageResult.setCode("200");
         pageResult.setMsg("Success");

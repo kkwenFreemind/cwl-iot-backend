@@ -81,6 +81,12 @@ public enum MetricUnit {
      */
     MILLIAMPERE("mA", "Milliampere", PhysicalQuantityCategory.ELECTRICAL),
 
+    // Flow Rate Units
+    /**
+     * Liters per minute - for flow rate measurements.
+     */
+    LITERS_PER_MINUTE("L/min", "Liters per minute", PhysicalQuantityCategory.FLOW_RATE),
+
     // Other Units
     /**
      * Percentage - for humidity, battery level, signal strength.

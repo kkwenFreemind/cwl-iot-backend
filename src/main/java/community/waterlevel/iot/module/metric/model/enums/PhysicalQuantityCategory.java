@@ -38,6 +38,12 @@ public enum PhysicalQuantityCategory {
     ELECTRICAL("Electrical"),
 
     /**
+     * Flow rate measurements.
+     * <p>Includes water flow rate measurements.
+     */
+    FLOW_RATE("Flow Rate"),
+
+    /**
      * Other measurements.
      * <p>Includes humidity, battery level, and signal strength measurements.
      */

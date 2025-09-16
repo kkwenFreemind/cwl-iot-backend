@@ -270,4 +270,19 @@ public interface IotMetricDefinitionService {
      * @return true if the unit is compatible with the physical quantity, false otherwise
      */
     boolean isUnitCompatibleWithQuantity(PhysicalQuantity physicalQuantity, MetricUnit unit);
+
+    /**
+     * Retrieves a paginated subset of IoT metric definitions using JPA Specification for flexible filtering.
+     * 
+     * This method supports advanced querying with data permission filtering by:
+     * - Using JPA Specification for dynamic query building
+     * - Applying department-level data isolation through AOP aspect
+     * - Supporting multiple filter criteria combination
+     * - Providing pagination for efficient data retrieval
+     * 
+     * @param spec The JPA Specification for filtering metric definitions
+     * @param pageable Pagination and sorting configuration
+     * @return A Page object containing the filtered metric definitions with pagination metadata
+     */
+    Page<IotMetricDefinition> getPageBySpec(org.springframework.data.jpa.domain.Specification<IotMetricDefinition> spec, Pageable pageable);
 }

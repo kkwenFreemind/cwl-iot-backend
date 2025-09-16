@@ -1,5 +1,6 @@
 package community.waterlevel.iot.module.metric.service.impl;
 
+import community.waterlevel.iot.common.annotation.DataPermission;
 import community.waterlevel.iot.common.exception.BusinessException;
 import community.waterlevel.iot.module.metric.model.entity.IotMetricDefinition;
 import community.waterlevel.iot.module.metric.model.enums.MetricDataType;
@@ -329,6 +330,29 @@ public class IotMetricDefinitionServiceImpl implements IotMetricDefinitionServic
     public Page<IotMetricDefinition> getPageByDeptId(Long deptId, Pageable pageable) {
         log.debug("Retrieving paginated IoT metric definitions for department: {} with pageable: {}", deptId, pageable);
         return repository.findByDeptId(deptId, pageable);
+    }
+
+    /**
+     * Retrieves a paginated subset of IoT metric definitions using JPA Specification for flexible filtering.
+     *
+     * This method supports advanced querying with data permission filtering by:
+     * - Using JPA Specification for dynamic query building
+     * - Applying department-level data isolation through AOP aspect
+     * - Supporting multiple filter criteria combination
+     * - Providing pagination for efficient data retrieval
+     *
+     * The @DataPermission annotation ensures that only metric definitions accessible
+     * to the current user (based on their department and data scope) are returned.
+     *
+     * @param spec The JPA Specification for filtering metric definitions
+     * @param pageable Pagination and sorting configuration
+     * @return A Page object containing the filtered metric definitions with pagination metadata
+     */
+    @Override
+    @DataPermission(deptIdColumnName = "deptId")
+    public Page<IotMetricDefinition> getPageBySpec(org.springframework.data.jpa.domain.Specification<IotMetricDefinition> spec, Pageable pageable) {
+        log.debug("Retrieving paginated IoT metric definitions with specification and pageable: {}", pageable);
+        return repository.findAll(spec, pageable);
     }
 
     /**

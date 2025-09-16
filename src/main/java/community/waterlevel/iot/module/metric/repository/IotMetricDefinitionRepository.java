@@ -6,6 +6,7 @@ import community.waterlevel.iot.module.metric.model.enums.PhysicalQuantity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -23,7 +24,7 @@ import java.util.Optional;
  * @since 2025/09/16
  */
 @Repository
-public interface IotMetricDefinitionRepository extends JpaRepository<IotMetricDefinition, Long> {
+public interface IotMetricDefinitionRepository extends JpaRepository<IotMetricDefinition, Long>, JpaSpecificationExecutor<IotMetricDefinition> {
 
     /**
      * Find metric definition by department ID and metric name.
