@@ -19,7 +19,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @EnableJpaRepositories(basePackages = {
     "community.waterlevel.iot.system.repository",
-    "community.waterlevel.iot.module.device.repository"
+    "community.waterlevel.iot.module.device.repository",
+    "community.waterlevel.iot.module.metric.repository"
 })
 @EnableJpaAuditing
 @EnableTransactionManagement
