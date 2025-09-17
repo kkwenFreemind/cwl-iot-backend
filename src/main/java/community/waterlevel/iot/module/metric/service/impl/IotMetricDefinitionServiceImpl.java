@@ -335,14 +335,11 @@ public class IotMetricDefinitionServiceImpl implements IotMetricDefinitionServic
     /**
      * Retrieves a paginated subset of IoT metric definitions using JPA Specification for flexible filtering.
      *
-     * This method supports advanced querying with data permission filtering by:
+     * This method supports advanced querying with flexible filtering by:
      * - Using JPA Specification for dynamic query building
-     * - Applying department-level data isolation through AOP aspect
      * - Supporting multiple filter criteria combination
      * - Providing pagination for efficient data retrieval
-     *
-     * The @DataPermission annotation ensures that only metric definitions accessible
-     * to the current user (based on their department and data scope) are returned.
+     * - Department-level filtering handled at the controller level
      *
      * @param spec The JPA Specification for filtering metric definitions
      * @param pageable Pagination and sorting configuration

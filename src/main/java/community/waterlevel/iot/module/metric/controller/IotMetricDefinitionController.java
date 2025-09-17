@@ -603,7 +603,9 @@ public class IotMetricDefinitionController {
             return preds.isEmpty() ? null : cb.and(preds.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
 
-        Pageable pageable = PageRequest.of(queryParams.getPage(), queryParams.getSize());
+        // Convert 1-based page number to 0-based for Spring Data JPA
+        int pageIndex = Math.max(0, queryParams.getPage() - 1);
+        Pageable pageable = PageRequest.of(pageIndex, queryParams.getSize());
         Page<IotMetricDefinition> result = service.getPageBySpec(spec, pageable);
         PageResult<IotMetricDefinition> pageResult = new PageResult<>();
         pageResult.setCode("200");
