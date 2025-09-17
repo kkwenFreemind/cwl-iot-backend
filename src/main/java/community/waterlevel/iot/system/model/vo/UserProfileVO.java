@@ -50,6 +50,9 @@ public class UserProfileVO {
     @Schema(description = "deptName")
     private String deptName;
 
+    @Schema(description = "deptId")
+    private Long deptId;
+
     @Schema(description = "roleNames")
     private String roleNames;
 

@@ -351,6 +351,9 @@ public class UserJpaServiceImpl implements UserJpaService {
                     .ifPresent(dept -> profileVO.setDeptName(dept.getName()));
         }
         
+        // Set department ID
+        profileVO.setDeptId(user.getDeptId());
+        
         // Set role names
         List<Long> roleIds = userRoleJpaRepository.findRoleIdsByUserId(user.getId());
         if (CollectionUtil.isNotEmpty(roleIds)) {
