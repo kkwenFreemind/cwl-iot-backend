@@ -1,0 +1,122 @@
+version: '3'
+services:
+  timescaledb:
+    image: timescale/timescaledb-ha:pg14-latest
+    container_name: timescale-cctv
+    restart: on-failure
+    ports:
+      - 15432:5432
+    volumes:
+      - ./create-databases.sh:/docker-entrypoint-initdb.d/create-databases.sh
+      - timescaledb-data-cctv:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: tsdb
+      POSTGRES_HOST_AUTH_METHOD: trust
+    networks:
+      - cctv-net
+  cache:
+    image: redis
+    container_name: redis-cctv
+    restart: always
+    ports:
+      - '16379:6379'
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - redis-cache-cctv:/data
+    networks:
+      - cctv-net
+  keycloak:
+    image: quay.io/keycloak/keycloak:16.1.0
+    container_name: keycloak-cctv
+    environment:
+      DB_VENDOR: postgres
+      DB_ADDR: timescaledb
+      DB_DATABASE: tsdb
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_SCHEMA: keycloak
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: admin
+#    restart: on-failure
+    ports:
+      - 8080:8080
+      - 9990:9990
+    depends_on:
+      - timescaledb
+    volumes:
+      - keycloak-home-cctv:/opt/jboss/keycloak
+    networks:
+      - cctv-net
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant-cctv
+    restart: on-failure
+    ports:
+      - "6333:6333"    # REST API
+      - "6334:6334"    # gRPC API (optional)
+    volumes:
+      - qdrant-data-cctv:/qdrant/storage
+      - qdrant-config-cctv:/qdrant/config
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__LOG_LEVEL=INFO
+      # RAG PoC 環境變數支援
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - cctv-net
+  emqx:
+    image: emqx/emqx:5.9.0
+    container_name: emqx-cctv
+    restart: on-failure
+    ports:
+      - "1883:1883"     # MQTT TCP port
+      - "8883:8883"     # MQTT SSL port
+      - "8083:8083"     # MQTT over WebSocket port
+      - "8084:8084"     # MQTT over WSS port
+      - "18083:18083"   # Dashboard HTTP port
+      - "18084:18084"   # Dashboard HTTPS port
+    volumes:
+      - emqx-data-cctv:/opt/emqx/data
+      - emqx-log-cctv:/opt/emqx/log
+      - ./emqx.conf:/opt/emqx/etc/emqx.conf
+    environment:
+      # 基本節點配置（其他配置通過 emqx.conf 文件）
+      - EMQX_NODE_NAME=emqx@127.0.0.1
+      - EMQX_NODE_COOKIE=emqx_cctv_secret_cookie
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - cctv-net
+
+volumes:
+  qdrant-data-cctv:
+    external: true
+  qdrant-config-cctv:
+    external: true
+  emqx-data-cctv:
+    external: true
+  emqx-log-cctv:
+    external: true
+  keycloak-home-cctv:
+    external: true
+  timescaledb-data-cctv:
+    external: true
+  redis-cache-cctv:
+    external: true
+networks:
+  cctv-net:
+    external: true

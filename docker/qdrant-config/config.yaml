@@ -1,0 +1,37 @@
+# Qdrant配置文件
+# 詳細配置請參考: https://qdrant.tech/documentation/guides/configuration/
+
+service:
+  # HTTP API配置
+  http_port: 6333
+  grpc_port: 6334
+  
+  # 啟用CORS (開發時使用)
+  enable_cors: true
+  
+  # API密鑰 (生產環境建議啟用)
+  # api_key: "your-secret-api-key"
+
+storage:
+  # 儲存引擎配置
+  # 可選值: 'rocksdb', 'sqlite'
+  storage_path: "./storage"
+  
+  # 效能調優
+  optimizers_config:
+    deleted_threshold: 0.2
+    vacuum_min_vector_number: 1000
+    default_segment_number: 0
+    max_segment_size_mb: 100
+    memmap_threshold_mb: 100
+    indexing_threshold_mb: 100
+    flush_interval_sec: 5
+    max_optimization_threads: 1
+
+cluster:
+  # 集群配置 (單節點時可忽略)
+  enabled: false
+
+telemetry:
+  # 遙測數據 (可選擇關閉)
+  disabled: false
