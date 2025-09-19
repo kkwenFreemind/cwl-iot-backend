@@ -228,4 +228,32 @@ public interface IotDeviceJpaService {
      *         enriched with department names
      */
     java.util.List<IotDeviceVO> listDevices(org.springframework.data.jpa.domain.Specification<community.waterlevel.iot.module.device.model.entity.IotDeviceJpa> specification);
+
+    /**
+     * Retrieves EMQX configuration for a specific IoT device.
+     *
+     * <p>This method provides access to the EMQX-specific configuration data
+     * for a device, including MQTT authentication credentials and topic information.
+     * This information is essential for device connectivity and MQTT communication.
+     *
+     * <p>Configuration includes:
+     * <ul>
+     *   <li>EMQX username and password for MQTT authentication</li>
+     *   <li>MQTT client identifier for unique device identification</li>
+     *   <li>Telemetry topic for data publishing</li>
+     *   <li>Command topic for receiving control commands</li>
+     * </ul>
+     *
+     * <p>Security considerations:
+     * <ul>
+     *   <li>Data permission filtering is applied based on department access</li>
+     *   <li>Credentials should be transmitted over secure channels</li>
+     *   <li>Access should be restricted to authorized users only</li>
+     * </ul>
+     *
+     * @param deviceId the UUID of the device to retrieve EMQX configuration for
+     * @return the EMQX device configuration if found, null otherwise
+     * @throws IllegalArgumentException if deviceId is null
+     */
+    community.waterlevel.iot.module.device.model.vo.EmqxDeviceConfigVO getDeviceEmqxConfig(java.util.UUID deviceId);
 }

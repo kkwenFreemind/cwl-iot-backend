@@ -7,13 +7,15 @@ import community.waterlevel.iot.module.device.repository.IotDeviceJpaRepository;
 import community.waterlevel.iot.system.repository.DeptJpaRepository;
 import community.waterlevel.iot.module.device.converter.IotDeviceJpaConverter;
 import community.waterlevel.iot.module.device.service.IotDeviceJpaService;
+import community.waterlevel.iot.module.device.service.EmqxService;
 import community.waterlevel.iot.module.device.model.enums.DeviceModelEnum;
 import org.springframework.stereotype.Service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.LocalDateTime;
 import java.util.*;
-
-
 
 /**
  * Implementation of IoT device business logic using JPA.
@@ -56,9 +58,12 @@ import java.util.*;
 @Service
 public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
 
+    private static final Logger log = LoggerFactory.getLogger(IotDeviceJpaServiceImpl.class);
+
     private final IotDeviceJpaRepository repository;
     private final IotDeviceJpaConverter converter;
     private final DeptJpaRepository deptJpaRepository;
+    private final EmqxService emqxService;
 
     /**
      * Constructs a new IoT device service implementation.
@@ -70,11 +75,13 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
      * @param repository the JPA repository for device data access
      * @param converter the MapStruct converter for model transformations
      * @param deptJpaRepository the repository for department data access
+     * @param emqxService the service for EMQX API operations
      */
-    public IotDeviceJpaServiceImpl(IotDeviceJpaRepository repository, IotDeviceJpaConverter converter, DeptJpaRepository deptJpaRepository) {
+    public IotDeviceJpaServiceImpl(IotDeviceJpaRepository repository, IotDeviceJpaConverter converter, DeptJpaRepository deptJpaRepository, EmqxService emqxService) {
         this.repository = repository;
         this.converter = converter;
         this.deptJpaRepository = deptJpaRepository;
+        this.emqxService = emqxService;
     }
 
     /**
@@ -156,8 +163,8 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
      * Creates a new IoT device with the provided form data.
      *
      * <p>This method handles the complete device creation process including
-     * data validation, audit trail setup, and database persistence. It ensures
-     * that all required fields are properly initialized and business rules
+     * data validation, audit trail setup, MQTT credential generation, and database persistence.
+     * It ensures that all required fields are properly initialized and business rules
      * are enforced.
      *
      * <p>Creation process:
@@ -165,6 +172,7 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
      *   <li>Converts form data to entity</li>
      *   <li>Generates UUID if not provided</li>
      *   <li>Sets creation audit fields (createdBy, createdAt)</li>
+     *   <li>Creates EMQX MQTT credentials and topics</li>
      *   <li>Persists device to database</li>
      * </ul>
      *
@@ -174,6 +182,7 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
      *
      * @see #updateDevice(UUID, IotDeviceForm)
      * @see community.waterlevel.iot.core.security.util.SecurityUtils#getUserId()
+     * @see EmqxService#createDeviceCredentials(UUID, Long)
      */
     @Override
     public boolean saveDevice(IotDeviceForm deviceForm) {
@@ -183,11 +192,32 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
         }
         entity.setCreatedBy(community.waterlevel.iot.core.security.util.SecurityUtils.getUserId());
         entity.setCreatedAt(LocalDateTime.now());
+
+        // Create EMQX MQTT credentials and topics for the device
+        try {
+            EmqxService.EmqxDeviceCredentials credentials = emqxService.createDeviceCredentials(
+                entity.getDeviceId(), entity.getDeptId()).block();
+
+            if (credentials != null) {
+                entity.setEmqxUsername(credentials.getUsername());
+                entity.setEmqxPassword(credentials.getPassword());
+                entity.setMqttClientId(credentials.getClientId());
+                entity.setTelemetryTopic(credentials.getTelemetryTopic());
+                entity.setCommandTopic(credentials.getCommandTopic());
+
+                log.info("Created MQTT credentials for device: {} (username: {})",
+                    entity.getDeviceName(), credentials.getUsername());
+            } else {
+                log.warn("Failed to create MQTT credentials for device: {}", entity.getDeviceName());
+            }
+        } catch (Exception e) {
+            log.error("Error creating MQTT credentials for device: {}", entity.getDeviceName(), e);
+            // Continue with device creation even if MQTT setup fails
+        }
+
         repository.save(entity);
         return true;
-    }
-
-    /**
+    }    /**
      * Updates an existing IoT device with the provided form data.
      *
      * <p>This method performs partial or full updates to device information
@@ -261,8 +291,33 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
         for (String p : parts) {
             try {
                 UUID id = UUID.fromString(p.trim());
+                
+                // Retrieve device before deletion to get EMQX username
+                Optional<IotDeviceJpa> deviceOptional = repository.findById(id);
+                String emqxUsername = null;
+                if (deviceOptional.isPresent()) {
+                    emqxUsername = deviceOptional.get().getEmqxUsername();
+                }
+                
+                // Delete device from database (soft delete)
                 repository.deleteById(id);
-            } catch (Exception ignore) {
+                
+                // Delete corresponding EMQX user if username exists
+                if (emqxUsername != null && !emqxUsername.isEmpty()) {
+                    try {
+                        emqxService.deleteDeviceCredentials(emqxUsername).block();
+                        log.info("Successfully deleted EMQX user for device: {} (username: {})", id, emqxUsername);
+                    } catch (Exception emqxException) {
+                        log.error("Failed to delete EMQX user for device: {} (username: {})", 
+                                 id, emqxUsername, emqxException);
+                        // Continue with device deletion even if EMQX cleanup fails
+                    }
+                } else {
+                    log.warn("No EMQX username found for device: {}, skipping EMQX user deletion", id);
+                }
+
+            } catch (Exception e) {
+                log.error("Failed to delete device: {}", p.trim(), e);
             }
         }
         return true;
@@ -510,33 +565,26 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
     }
 
     /**
-     * Calculates the great-circle distance between two geographic points using the Haversine formula.
+     * Calculates the great-circle distance between two points using the Haversine formula.
      *
-     * <p>This utility method computes the shortest distance over the earth's surface
-     * between two points specified by latitude and longitude coordinates. The
-     * calculation assumes a spherical earth with a radius of 6371 kilometers.
+     * <p>This method computes the shortest distance over the earth's surface between
+     * two geographic points specified by latitude and longitude coordinates. The
+     * calculation uses the Haversine formula which accounts for the spherical nature
+     * of the earth and provides accurate distance measurements for geographic queries.
      *
-     * <p>Formula: Haversine distance calculation
-     * <pre>
-     * a = sin²(Δlat/2) + cos(lat1) * cos(lat2) * sin²(Δlon/2)
-     * c = 2 * atan2(√a, √(1-a))
-     * distance = R * c
-     * </pre>
-     *
-     * <p>Where:
+     * <p>Formula details:
      * <ul>
-     *   <li>Δlat = lat2 - lat1 (latitude difference in radians)</li>
-     *   <li>Δlon = lon2 - lon1 (longitude difference in radians)</li>
-     *   <li>R = 6371 km (Earth's radius)</li>
+     *   <li>Earth radius: 6371 km (mean radius)</li>
+     *   <li>Input coordinates in decimal degrees</li>
+     *   <li>Output distance in kilometers</li>
+     *   <li>Accurate for distances up to ~20,000 km</li>
      * </ul>
      *
-     * @param lat1 the latitude of the first point in degrees
-     * @param lon1 the longitude of the first point in degrees
-     * @param lat2 the latitude of the second point in degrees
-     * @param lon2 the longitude of the second point in degrees
+     * @param lat1 latitude of the first point in decimal degrees
+     * @param lon1 longitude of the first point in decimal degrees
+     * @param lat2 latitude of the second point in decimal degrees
+     * @param lon2 longitude of the second point in decimal degrees
      * @return the distance between the two points in kilometers
-     *
-     * @see #getNearestDevices(Double, Double, Integer)
      */
     private double haversine(double lat1, double lon1, double lat2, double lon2) {
         double R = 6371.0; // km
@@ -545,5 +593,65 @@ public class IotDeviceJpaServiceImpl implements IotDeviceJpaService {
         double a = Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(Math.toRadians(lat1))*Math.cos(Math.toRadians(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);
         double c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         return R*c;
+    }
+
+    /**
+     * Retrieves EMQX configuration for a specific IoT device.
+     *
+     * <p>This method provides access to the EMQX-specific configuration data
+     * for a device, including MQTT authentication credentials and topic information.
+     * The method applies data permission filtering to ensure users can only access
+     * devices within their authorized departments.
+     *
+     * <p>Implementation details:
+     * <ul>
+     *   <li>Queries device by ID with automatic data permission filtering</li>
+     *   <li>Validates device existence and user access rights</li>
+     *   <li>Converts entity data to EMQX configuration view object</li>
+     *   <li>Handles null values gracefully for optional configuration fields</li>
+     * </ul>
+     *
+     * <p>Security considerations:
+     * <ul>
+     *   <li>Data permission filtering ensures department-based access control</li>
+     *   <li>Credentials are only accessible to authorized users</li>
+     *   <li>Soft delete filtering prevents access to deleted devices</li>
+     * </ul>
+     *
+     * @param deviceId the UUID of the device to retrieve EMQX configuration for
+     * @return the EMQX device configuration if found and accessible, null otherwise
+     * @throws IllegalArgumentException if deviceId is null
+     */
+    @Override
+    public community.waterlevel.iot.module.device.model.vo.EmqxDeviceConfigVO getDeviceEmqxConfig(UUID deviceId) {
+        if (deviceId == null) {
+            throw new IllegalArgumentException("Device ID cannot be null");
+        }
+
+        log.debug("Retrieving EMQX configuration for device: {}", deviceId);
+
+        // Query device with data permission filtering applied automatically via @DataPermission
+        Optional<IotDeviceJpa> deviceOptional = repository.findById(deviceId);
+
+        if (deviceOptional.isEmpty()) {
+            log.warn("Device not found or access denied for device: {}", deviceId);
+            return null;
+        }
+
+        IotDeviceJpa device = deviceOptional.get();
+
+        // Convert entity to EMQX configuration VO
+        community.waterlevel.iot.module.device.model.vo.EmqxDeviceConfigVO configVO =
+            new community.waterlevel.iot.module.device.model.vo.EmqxDeviceConfigVO();
+
+        configVO.setDeviceId(device.getDeviceId());
+        configVO.setEmqxUsername(device.getEmqxUsername());
+        configVO.setEmqxPassword(device.getEmqxPassword());
+        configVO.setMqttClientId(device.getMqttClientId());
+        configVO.setTelemetryTopic(device.getTelemetryTopic());
+        configVO.setCommandTopic(device.getCommandTopic());
+
+        log.debug("Successfully retrieved EMQX configuration for device: {}", deviceId);
+        return configVO;
     }
 }

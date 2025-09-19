@@ -139,5 +139,8 @@ captcha:
   # Captcha validity period (seconds)
   expire-seconds: 120
 
-
-
+emqx:
+  api:
+    url: http://localhost:18083/api/v5
+    key: 0ee89e854c23648c
+    secret: JEnTyO1PdswW7UEtWnZiIKNLOCJxswsPCJojbuD8GEP

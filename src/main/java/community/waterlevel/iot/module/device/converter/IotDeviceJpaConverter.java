@@ -7,6 +7,7 @@ import community.waterlevel.iot.module.device.model.form.IotDeviceForm;
 import community.waterlevel.iot.module.device.model.vo.IotDeviceVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
 /**
  * MapStruct converter interface for IoT device model transformations.
@@ -33,7 +34,7 @@ import org.mapstruct.Mapping;
  * @since 2025/09/15
  * 
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface IotDeviceJpaConverter {
 
     /**
@@ -66,6 +67,7 @@ public interface IotDeviceJpaConverter {
      *   <li>{@code isDeleted} - Defaults to false for new entities</li>
      *   <li>{@code updatedAt} - Set during updates in service layer</li>
      *   <li>{@code geom} - Computed by database trigger from lat/lng</li>
+     *   <li>{@code emqxUsername, emqxPassword, mqttClientId, telemetryTopic, commandTopic} - Set by EMQX service</li>
      * </ul>
      *
      * @param form the form object containing device data from API request
@@ -79,6 +81,11 @@ public interface IotDeviceJpaConverter {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "geom", ignore = true) // Handled by database trigger
     @Mapping(target = "deviceModel", source = "deviceModel")
+    @Mapping(target = "emqxUsername", ignore = true) // Set by EMQX service
+    @Mapping(target = "emqxPassword", ignore = true)
+    @Mapping(target = "mqttClientId", ignore = true)
+    @Mapping(target = "telemetryTopic", ignore = true)
+    @Mapping(target = "commandTopic", ignore = true)
     IotDeviceJpa toEntity(IotDeviceForm form);
 
     /**

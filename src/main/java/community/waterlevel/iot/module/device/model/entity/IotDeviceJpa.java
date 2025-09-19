@@ -229,4 +229,61 @@ public class IotDeviceJpa {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    /**
+     * EMQX MQTT broker authentication username.
+     *
+     * <p>Stores the username used for authenticating this device with the EMQX MQTT broker.
+     * This credential is used when the device connects to the MQTT broker for secure communication.
+     *
+     * <p>Database column: {@code emqx_username} (NULLABLE)
+     */
+    @Column(name = "emqx_username")
+    private String emqxUsername;
+
+    /**
+     * EMQX MQTT broker authentication password.
+     *
+     * <p>Stores the password used for authenticating this device with the EMQX MQTT broker.
+     * This credential is used when the device connects to the MQTT broker for secure communication.
+     *
+     * <p>Database column: {@code emqx_password} (NULLABLE)
+     */
+    @Column(name = "emqx_password")
+    private String emqxPassword;
+
+    /**
+     * Unique MQTT client identifier for device connection.
+     *
+     * <p>Stores the unique client identifier used by this device when connecting to the MQTT broker.
+     * This ID must be unique across all devices and is used by the MQTT broker to identify the device.
+     *
+     * <p>Database column: {@code mqtt_client_id} (NULLABLE)
+     */
+    @Column(name = "mqtt_client_id")
+    private String mqttClientId;
+
+    /**
+     * MQTT topic for publishing device telemetry data.
+     *
+     * <p>Defines the MQTT topic where this device publishes its telemetry data (sensor readings, status, etc.).
+     * The topic follows MQTT topic naming conventions and may include wildcards for multi-tenant support.
+     *
+     * <p>Database column: {@code telemetry_topic} (NULLABLE)
+     * <p>Example: "tenants/tenant1/devices/device123/telemetry"
+     */
+    @Column(name = "telemetry_topic")
+    private String telemetryTopic;
+
+    /**
+     * MQTT topic for receiving device control commands.
+     *
+     * <p>Defines the MQTT topic where this device listens for control commands from the backend system.
+     * Commands may include configuration updates, calibration requests, or operational instructions.
+     *
+     * <p>Database column: {@code command_topic} (NULLABLE)
+     * <p>Example: "tenants/tenant1/devices/device123/commands"
+     */
+    @Column(name = "command_topic")
+    private String commandTopic;
+
 }

@@ -229,4 +229,49 @@ public class IotDeviceJpaController {
         return Result.success(devices);
     }
 
+    /**
+     * Retrieves EMQX configuration for a specific IoT device.
+     *
+     * <p>This endpoint provides access to the EMQX-specific configuration data
+     * for a device, including MQTT authentication credentials and topic information.
+     * This information is essential for device connectivity setup and MQTT communication.
+     *
+     * <p>Configuration data includes:
+     * <ul>
+     *   <li>EMQX username and password for MQTT authentication</li>
+     *   <li>MQTT client identifier for unique device identification</li>
+     *   <li>Telemetry topic for data publishing</li>
+     *   <li>Command topic for receiving control commands</li>
+     * </ul>
+     *
+     * <p>Security considerations:
+     * <ul>
+     *   <li>Data permission filtering ensures department-based access control</li>
+     *   <li>Credentials should be transmitted over secure channels (HTTPS)</li>
+     *   <li>Access should be restricted to authorized users only</li>
+     *   <li>API responses containing credentials should be logged carefully</li>
+     * </ul>
+     *
+     * <p>Response behavior:
+     * <ul>
+     *   <li>200 OK: Configuration retrieved successfully</li>
+     *   <li>404 Not Found: Device not found or access denied</li>
+     *   <li>400 Bad Request: Invalid device ID format</li>
+     * </ul>
+     *
+     * @param deviceId the UUID of the device to retrieve EMQX configuration for
+     * @return Result containing the EMQX device configuration
+     */
+    @Operation(summary = "Get EMQX configuration for a specific device")
+    @GetMapping("/{deviceId}/emqx-config")
+    @Log(value = "Get device EMQX configuration", module = LogModuleEnum.OTHER)
+    public Result<community.waterlevel.iot.module.device.model.vo.EmqxDeviceConfigVO> getDeviceEmqxConfig(
+            @Parameter(description = "Device ID") @PathVariable UUID deviceId) {
+        community.waterlevel.iot.module.device.model.vo.EmqxDeviceConfigVO config = deviceService.getDeviceEmqxConfig(deviceId);
+        if (config == null) {
+            return Result.failed("Device not found or access denied");
+        }
+        return Result.success(config);
+    }
+
 }
